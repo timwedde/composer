@@ -28,7 +28,7 @@ See SequencerObserver for a pre made, easy to extend base class that can be
 attached to the Sequencer.
 """
 
-from mingus.containers.instrument import MidiInstrument
+from ..containers.instrument import MidiInstrument
 
 class Sequencer(object):
 
@@ -36,7 +36,7 @@ class Sequencer(object):
 
     You can use the Sequencer object either by creating a subclass and
     implementing some of the events (init, play_event, stop_event, cc_event,
-    instr_event) or by attaching observer objects via 'attach' and catching 
+    instr_event) or by attaching observer objects via 'attach' and catching
     the messages in the notify(msg_type, param_dict) function of your object.
 
     See SequencerObserver for a pre made, easy to extend base class that can

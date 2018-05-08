@@ -26,7 +26,7 @@ This module can also convert the found frequencies to Note objects.
 import wave
 import struct
 import numpy
-from mingus.containers.note import Note
+from ..containers.note import Note
 from numpy.fft import fft as _fft
 import operator
 

@@ -26,7 +26,7 @@ proper function so you only have to implement the functions for the events
 you need to see.
 """
 
-from mingus.midi.sequencer import Sequencer
+from .sequencer import Sequencer
 
 class SequencerObserver(object):
 

@@ -19,14 +19,13 @@
 
 """Read a MIDI file and convert it into mingus.containers objects."""
 
-from mingus.containers.note import Note
-from mingus.containers.note_container import NoteContainer
-from mingus.containers.bar import Bar
-from mingus.containers.track import Track
-from mingus.containers.composition import Composition
-from mingus.containers.instrument import MidiInstrument
-import mingus.core.notes as notes
-import mingus.core.intervals as intervals
+from ..containers.note import Note
+from ..containers.note_container import NoteContainer
+from ..containers.bar import Bar
+from ..containers.track import Track
+from ..containers.composition import Composition
+from ..containers.instrument import MidiInstrument
+from ..core import notes, intervals
 import binascii
 
 def MIDI_to_Composition(file):

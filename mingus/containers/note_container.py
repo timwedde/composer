@@ -17,9 +17,9 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from note import Note
-from mingus.core import intervals, chords, progressions
-from mt_exceptions import UnexpectedObjectError
+from ..containers.note import Note
+from ..core import intervals, chords, progressions
+from ..containers.mt_exceptions import UnexpectedObjectError
 
 class NoteContainer(object):
 
@@ -267,6 +267,18 @@ class NoteContainer(object):
         """Diminish all the notes in the NoteContainer."""
         for n in self.notes:
             n.diminish()
+
+    def to_minor(self):
+        """Converts all the notes in the container to their minor
+        equivalent."""
+        for n in self.notes:
+            n.to_minor()
+
+    def to_major(self):
+        """Converts all the notes in the container to their major
+        equivalent."""
+        for n in self.notes:
+            n.to_major()
 
     def determine(self, shorthand=False):
         """Determine the type of chord or interval currently in the

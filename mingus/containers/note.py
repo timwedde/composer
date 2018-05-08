@@ -17,8 +17,8 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from mingus.core import notes, intervals
-from mt_exceptions import NoteFormatError
+from ..core import notes, intervals
+from ..containers.mt_exceptions import NoteFormatError
 from math import log
 
 class Note(object):
@@ -60,13 +60,13 @@ class Note(object):
             raise NoteFormatError("Don't know what to do with name object: "
                     "'%s'" % name)
 
-    
+
     def set_channel(self, channel):
         self.channel = channel
-        
+
     def set_velocity(self, velocity):
         self.velocity = velocity
-    
+
     def set_note(self, name='C', octave=4, dynamics={}):
         """Set the note to name in octave with dynamics.
 
@@ -104,6 +104,19 @@ class Note(object):
         """Call notes.augment with this note as argument."""
         self.name = notes.augment(self.name)
 
+
+    def to_minor(self):
+        """Converts all the notes in the container to their minor
+        equivalent."""
+        for n in self.notes:
+            n.to_minor()
+
+    def to_major(self):
+        """Converts all the notes in the container to their major
+        equivalent."""
+        for n in self.notes:
+            n.to_major()
+
     def diminish(self):
         """Call notes.diminish with this note as argument."""
         self.name = notes.diminish(self.name)
@@ -121,6 +134,16 @@ class Note(object):
     def octave_down(self):
         """Decrement the current octave with 1."""
         self.change_octave(-1)
+
+    def to_minor(self):
+        """Calls notes.to_minor with this note as argument.
+        Doesn't change the octave."""
+        self.name = notes.to_minor(self.name)
+
+    def to_major(self):
+        """Calls notes.to_major with this note name as argument.
+        Doesn't change the octave."""
+        self.name = notes.to_major(self.name)
 
     def remove_redundant_accidentals(self):
         """Call notes.remove_redundant_accidentals on this note's name."""
@@ -250,7 +273,7 @@ class Note(object):
     def __int__(self):
         """Return the current octave multiplied by twelve and add
         notes.note_to_int to it.
-        
+
         This means a C-0 returns 0, C-1 returns 12, etc. This method allows
         you to use int() on Notes.
         """

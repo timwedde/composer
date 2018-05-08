@@ -20,10 +20,10 @@
 """Dozens of standard tunings, a StringTuning class and some functions to help
 you search through them."""
 
-from mingus.containers.note import Note
-from mingus.containers.note_container import NoteContainer
-from mingus.core.mt_exceptions import RangeError
-import mingus.core.notes as notes
+from ..containers.note import Note
+from ..containers.note_container import NoteContainer
+from ..core.mt_exceptions import RangeError
+from ..core import notes
 
 class StringTuning(object):
 

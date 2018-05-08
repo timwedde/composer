@@ -31,8 +31,8 @@ To start using FluidSynth with mingus, do:
 Now you are ready to play Notes, NoteContainers, etc.
 """
 
-from mingus.midi.sequencer import Sequencer
-from mingus.containers.instrument import MidiInstrument
+from .sequencer import Sequencer
+from ..containers.instrument import MidiInstrument
 import pyfluidsynth as fs
 import time
 import wave

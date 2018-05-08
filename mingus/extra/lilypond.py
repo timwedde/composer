@@ -24,10 +24,9 @@ mingus.containers.
 """
 from mingus.containers import Note
 
-from mingus.core.keys import Key
-from mingus.containers.mt_exceptions import (NoteFormatError,
-        UnexpectedObjectError)
-import mingus.core.value as value
+from ..core.keys import Key
+from ..containers.mt_exceptions import NoteFormatError, UnexpectedObjectError
+from ..core import value
 import os
 import subprocess
 

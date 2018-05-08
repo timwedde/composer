@@ -52,10 +52,10 @@ Other scales
  * Octatonic(note)
 """
 
-import intervals
-from notes import augment, diminish, reduce_accidentals
-from keys import keys, get_notes
-from mt_exceptions import NoteFormatError, FormatError, RangeError
+from . import intervals
+from .notes import augment, diminish, reduce_accidentals
+from .keys import keys, get_notes
+from .mt_exceptions import NoteFormatError, FormatError, RangeError
 
 def determine(notes):
     """Determine the scales containing the notes.
@@ -154,7 +154,7 @@ class Diatonic(_Scale):
     """
 
     type = 'diatonic'
-        
+
     def __init__(self, note, semitones, octaves=1):
         """Create the diatonic scale starting on the chosen note.
 
@@ -448,7 +448,7 @@ class MelodicMinor(_Scale):
         notes[5] = augment(notes[5])
         notes[6] = augment(notes[6])
         return notes * self.octaves + [notes[0]]
-        
+
     def descending(self):
         notes = NaturalMinor(self.tonic).descending()[:-1]
         return notes * self.octaves + [notes[0]]

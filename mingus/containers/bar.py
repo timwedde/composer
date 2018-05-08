@@ -17,11 +17,11 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from mingus.core import meter as _meter
-from mingus.core import progressions, keys
-from note_container import NoteContainer
-from note import Note
-from mt_exceptions import MeterFormatError
+from ..core import meter as _meter
+from ..core import progressions, keys
+from ..containers.note_container import NoteContainer
+from ..containers.note import Note
+from ..containers.mt_exceptions import MeterFormatError
 
 class Bar(object):
     """A bar object.

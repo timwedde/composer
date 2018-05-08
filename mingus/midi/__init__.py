@@ -19,11 +19,3 @@
 
 from sequencer import Sequencer
 from sequencer_observer import SequencerObserver
-__all__ = [
-    'Sequencer',
-    'SequencerObserver',
-    'midi_file_in',
-    'midi_file_out',
-    'midi_track',
-    'fluidsynth',
-    ]

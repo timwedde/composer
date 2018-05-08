@@ -26,7 +26,8 @@ It handles conversions from integers to notes and vice versa and thus
 enables simple calculations.
 """
 
-from mt_exceptions import NoteFormatError, RangeError, FormatError
+from . import intervals
+from .mt_exceptions import NoteFormatError, RangeError, FormatError
 
 _note_dict = {
     'C': 0,
@@ -72,7 +73,7 @@ def is_enharmonic(note1, note2):
 
 def is_valid_note(note):
     """Return True if note is in a recognised format. False if not."""
-    if not _note_dict.has_key(note[0]):
+    if not note[0] in _note_dict:
         return False
     for post in note[1:]:
         if post != 'b' and post != '#':
@@ -144,12 +145,6 @@ def remove_redundant_accidentals(note):
 
 def augment(note):
     """Augment a given note.
-
-    Examples:
-    >>> augment('C')
-    'C#'
-    >>> augment('Cb')
-    'C'
     """
     if note[-1] != 'b':
         return note + '#'
@@ -170,3 +165,20 @@ def diminish(note):
     else:
         return note[:-1]
 
+def to_major(note):
+    """Returns the major of `note`.
+    Example:
+    {{{
+    >>> to_major("A")
+    'C'
+    }}}"""
+    return intervals.minor_third(note)
+
+def to_minor(note):
+    """Returns the minor of note.
+    Example:
+    {{{
+    >>> to_minor("C")
+    'A'
+    }}}"""
+    return intervals.major_sixth(note)

@@ -32,12 +32,12 @@ http://www.musicxml.org/xml.html
 
 import xml
 from xml.dom.minidom import Document
-from mingus.core import notes
-from mingus.core.keys import major_keys, minor_keys
-from mingus.containers.instrument import MidiInstrument
-from mingus.containers.composition import Composition
-from mingus.containers.track import Track
-from mingus.core import value
+from ..core import notes
+from ..core.keys import major_keys, minor_keys
+from ..containers.instrument import MidiInstrument
+from ..containers.composition import Composition
+from ..containers.track import Track
+from ..core import value
 import datetime
 
 def _gcd(a=None, b=None, terms=None):

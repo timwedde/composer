@@ -25,15 +25,15 @@ can't be opened.
 """
 
 import sys
-# We should be able to import this module on non-win32 systems without 
+# We should be able to import this module on non-win32 systems without
 # raising exceptions. So instead, raise in the init() method.
 if sys.platform=='win32':
     import win32midi
     from win32midi import Win32MidiException
-    
+
 from datetime import datetime
-from mingus.midi.sequencer import Sequencer
-from mingus.containers.instrument import MidiInstrument
+from .sequencer import Sequencer
+from ..containers.instrument import MidiInstrument
 
 class Win32MidiSequencer(Sequencer):
     output = None

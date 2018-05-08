@@ -19,7 +19,7 @@ from ctypes import windll, c_buffer, c_void_p, c_int, byref
 class Win32MidiException(exceptions.Exception): pass
 
 class Win32MidiPlayer():
-    
+
     def __init__(self):
         self.midiOutOpenErrorCodes= {
             (64+4) : 'MIDIERR_NODEVICE  No MIDI port was found. This error occurs only when the mapper is opened.',
@@ -32,7 +32,7 @@ class Win32MidiPlayer():
             (64+3):'MIDIERR_NOTREADY    The hardware is busy with other data.',
             (0+5):'MMSYSERR_INVALHANDLE     The specified device handle is invalid.',}
         self.winmm = windll.winmm
-        
+
     def countDevices(self):
         return self.winmm.midiOutGetNumDevs()
     def openDevice(self, deviceNumber=-1): #device -1 refers to the default set in midi mapper, usually a good choice
@@ -51,9 +51,9 @@ class Win32MidiPlayer():
         rc = self.winmm.midiOutShortMsg (self.hmidi, mm)
         if rc!=0:
             raise Win32MidiException( 'Error opening device, '+self.midiOutShortErrorCodes.get(rc,'Unknown error.'))
-        
+
         time.sleep(duration)
-        
+
         # turn it off
         midimsg = 0x80 + ((pitch) * 0x100) + channel
         mm = c_int(midimsg)
@@ -67,14 +67,14 @@ class Win32MidiPlayer():
         rc = self.winmm.midiOutShortMsg (self.hmidi, mm)
         if rc!=0:
             raise Win32MidiException( 'Error sending event, '+self.midiOutShortErrorCodes.get(rc,'Unknown error.'))
-            
+
     def rawNoteOff(self, pitch,  channel=1):
         midimsg = 0x80 + ((pitch) * 0x100) + channel
         mm = c_int(midimsg)
         rc = self.winmm.midiOutShortMsg (self.hmidi, mm)
         if rc!=0:
             raise Win32MidiException( 'Error sending event, '+self.midiOutShortErrorCodes.get(rc,'Unknown error.'))
-    
+
     def programChange(self, program,  channel=1):
         p = program
         v = 0
@@ -83,11 +83,11 @@ class Win32MidiPlayer():
         rc = self.winmm.midiOutShortMsg (self.hmidi, mm)
         if rc!=0:
             raise Win32MidiException( 'Error sending event, '+self.midiOutShortErrorCodes.get(rc,'Unknown error.'))
-            
+
     def controllerChange(self, controller, val, channel=1):
         midimsg = 0xB0 + ((controller) * 0x100) + (val * 0x10000) + channel
         mm = c_int(midimsg)
         rc = self.winmm.midiOutShortMsg (self.hmidi, mm)
         if rc!=0:
             raise Win32MidiException( 'Error sending event, '+self.midiOutShortErrorCodes.get(rc,'Unknown error.'))
-        
+
