@@ -11,11 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 """A MIDI interface to the sequence generators.
 
 Captures monophonic input MIDI sequences and plays back responses from the
 sequence generator.
 """
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -30,8 +32,8 @@ from six.moves import input  # pylint: disable=redefined-builtin
 import tensorflow as tf
 import magenta
 
-from magenta.interfaces.midi import midi_hub
-from magenta.interfaces.midi import midi_interaction
+import my_hub
+import midi_interaction
 from magenta.models.drums_rnn import drums_rnn_sequence_generator
 from magenta.models.melody_rnn import melody_rnn_sequence_generator
 from magenta.models.performance_rnn import performance_sequence_generator
@@ -108,12 +110,12 @@ tf.app.flags.DEFINE_boolean(
     'Whether to allow the call to overlap with the response.')
 tf.app.flags.DEFINE_boolean(
     'enable_metronome',
-    True,
+    False,
     'Whether to enable the metronome. Ignored if `clock_control_number` is '
     'provided.')
 tf.app.flags.DEFINE_integer(
     'metronome_channel',
-    1,
+    0,
     'The 0-based MIDI channel to output the metronome on. Ignored if '
     '`enable_metronome` is False or `clock_control_number` is provided.')
 tf.app.flags.DEFINE_integer(
@@ -150,9 +152,9 @@ tf.app.flags.DEFINE_float(
     'playback_offset',
     0.0,
     'Time in seconds to adjust playback time by.')
-tf.app.flags.DEFINE_integer(
+tf.app.flags.DEFINE_string(
     'playback_channel',
-    0,
+    "1,2,9",
     'MIDI channel to send play events.')
 tf.app.flags.DEFINE_boolean(
     'learn_controls',
@@ -240,7 +242,7 @@ class CCMapper(object):
       self._update_event.clear()
       self._midi_hub.register_callback(
           partial(self._update_signal, signal),
-          midi_hub.MidiSignal(type='control_change'))
+          my_hub.MidiSignal(type='control_change'))
       print('Send a control signal using the control number you wish to '
             'associate with `%s`.' % signal)
       self._update_event.wait()
@@ -250,17 +252,16 @@ def _validate_flags():
   """Returns True if flag values are valid or prints error and returns False."""
   if FLAGS.list_ports:
     print("Input ports: '%s'" % (
-        "', '".join(midi_hub.get_available_input_ports())))
+        "', '".join(my_hub.get_available_input_ports())))
     print("Ouput ports: '%s'" % (
-        "', '".join(midi_hub.get_available_output_ports())))
+        "', '".join(my_hub.get_available_output_ports())))
     return False
 
   if FLAGS.bundle_files is None:
     print('--bundle_files must be specified.')
     return False
 
-  if (len(FLAGS.bundle_files.split(',')) > 1 and
-      FLAGS.generator_select_control_number is None):
+  if (len(FLAGS.bundle_files.split(',')) > 1 and FLAGS.generator_select_control_number is None):
     tf.logging.warning(
         'You have specified multiple bundle files (generators), without '
         'setting `--generator_select_control_number`. You will only be able to '
@@ -324,40 +325,55 @@ def main(unused_argv):
       return
 
   # Initialize MidiHub.
-  hub = midi_hub.MidiHub(FLAGS.input_ports.split(','),
+  playback_channels = list(map(int, FLAGS.playback_channel.split(',')))
+  hub_1 = my_hub.MidiHub(FLAGS.input_ports.split(','),
                          FLAGS.output_ports.split(','),
-                         midi_hub.TextureType.POLYPHONIC,
+                         my_hub.TextureType.POLYPHONIC,
                          passthrough=FLAGS.passthrough,
-                         playback_channel=FLAGS.playback_channel,
+                         playback_channel=playback_channels[0],
+                         playback_offset=FLAGS.playback_offset)
+  hub_2 = my_hub.MidiHub(FLAGS.input_ports.split(','),
+                         FLAGS.output_ports.split(','),
+                         my_hub.TextureType.POLYPHONIC,
+                         passthrough=FLAGS.passthrough,
+                         playback_channel=playback_channels[1],
+                         playback_offset=FLAGS.playback_offset)
+  hub_3 = my_hub.MidiHub(FLAGS.input_ports.split(','),
+                         FLAGS.output_ports.split(','),
+                         my_hub.TextureType.POLYPHONIC,
+                         passthrough=FLAGS.passthrough,
+                         playback_channel=playback_channels[2],
                          playback_offset=FLAGS.playback_offset)
 
-  control_map = {re.sub('_control_number$', '', f): FLAGS.__getattr__(f)
-                 for f in _CONTROL_FLAGS}
+  control_map = {re.sub('_control_number$', '', f): FLAGS.__getattr__(f) for f in _CONTROL_FLAGS}
   if FLAGS.learn_controls:
-    CCMapper(control_map, hub).update_map()
+    CCMapper(control_map, hub_1).update_map()
 
   if control_map['clock'] is None:
     # Set the tick duration to be a single bar, assuming a 4/4 time signature.
     clock_signal = None
     tick_duration = 4 * (60. / FLAGS.qpm)
   else:
-    clock_signal = midi_hub.MidiSignal(
-        control=control_map['clock'], value=127)
+    clock_signal = my_hub.MidiSignal(control=control_map['clock'], value=127)
     tick_duration = None
 
   end_call_signal = (
       None if control_map['end_call'] is None else
-      midi_hub.MidiSignal(control=control_map['end_call'], value=127))
+      my_hub.MidiSignal(control=control_map['end_call'], value=127))
   panic_signal = (
       None if control_map['panic'] is None else
-      midi_hub.MidiSignal(control=control_map['panic'], value=127))
+      my_hub.MidiSignal(control=control_map['panic'], value=127))
   mutate_signal = (
       None if control_map['mutate'] is None else
-      midi_hub.MidiSignal(control=control_map['mutate'], value=127))
+      my_hub.MidiSignal(control=control_map['mutate'], value=127))
   metronome_channel = (
       FLAGS.metronome_channel if FLAGS.enable_metronome else None)
-  interaction = midi_interaction.CallAndResponseMidiInteraction(
-      hub,
+
+  # interaction = midi_interaction.CallAndResponseMidiInteraction(
+  interaction = midi_interaction.SongStructureMidiInteraction(
+      hub_1,
+      hub_2,
+      hub_3,
       generators,
       FLAGS.qpm,
       FLAGS.generator_select_control_number,
@@ -376,15 +392,17 @@ def main(unused_argv):
       loop_control_number=control_map['loop'],
       state_control_number=control_map['state'])
 
-  _print_instructions()
+  # _print_instructions()
 
   interaction.start()
+  print("Interaction started.")
   try:
     while True:
       time.sleep(1)
   except KeyboardInterrupt:
     interaction.stop()
 
+  print("")
   print('Interaction stopped.')
 
 
