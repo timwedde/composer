@@ -89,7 +89,7 @@ class AppModel:
         self.input_port = None
         self.output_port = None
         self.song = None
-        self.keyboard = Keyboard(octaves=4, channel=1, note_shift=-36)
+        self.keyboard = Keyboard(channel=1, note_shift=-36)
         self.modes = []
         self.data = {}
         for m, d in data:
@@ -462,7 +462,7 @@ class Pudding(urwid.Widget):
 
     def render(self, size, focus=False):
         (maxcol,) = size
-        data = self.model.keyboard.draw()
+        data = self.model.keyboard.draw(maxcol)
         for i in range(len(data)):
             data[i] = data[i].encode()
         return urwid.TextCanvas(data, maxcol=maxcol)
@@ -487,10 +487,10 @@ class AppController:
             for line in f:
                 parts = [l.strip() for l in line.split(",")]
                 sp = SongPart(parts[0], parts[1:])
-                if chords_per_part.get(sp.name, False) and not sp.chords:
-                    sp.chords = chords_per_part[sp.name]
+                if chords_per_part.get(sp.name, False) and len(sp) == 0:
+                    sp = chords_per_part[sp.name]
                 structure.append(sp)
-                chords_per_part[sp.name] = sp.chords
+                chords_per_part[sp.name] = sp
         logging.info(f"Loaded '{file}' with structure: {structure}")
         return structure
 

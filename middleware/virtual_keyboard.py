@@ -26,9 +26,6 @@ class Delimiter():
 class Key():
 
     def __init__(self, num):
-        super(Key, self).__init__()
-        if not 0 <= num <= 127:
-            raise IndexError("Key number must be in range 0 - 127")
         self.num = num
         self.type = KeyType.BLACK if num in black_keys_flattened else KeyType.WHITE
         self.state = KeyState.INACTIVE
@@ -130,70 +127,76 @@ class Key():
 
 class Keyboard():
 
-    def __init__(self, octaves=4, channel=0, note_shift=0):
-        if not 0 < octaves < 11:
-            raise IndexError("Octave number must be in range 1 - 10")
+    def __init__(self, channel=0, note_shift=0):
         self.keys = []
-        self.octaves = octaves
-        for i in range(self.octaves * 12):
+        for i in range(127):
             self.keys.append(Key(i))
         self.midi_state = MidiState()
         self.channel = channel
         self.note_shift = -note_shift
 
     def keyboard_header(self, width):
-        extra_width = width - 57
-        return [" {} ".format("_" * (width - 2)),
-                "|:::::: o o o o . |..... . .. . |{} [{:2d}]  o o o o o ::::::|".format(
-                    " " * extra_width, self.channel),
-                "|:::::: o o o o   | ..  . ..... |{}       o o o o o ::::::|".format(
-                    " " * extra_width),
-                "|::::::___________|__..._...__._|{}_________________::::::|".format("_" * extra_width)]
+        part = width // 10
+        small_part = width // 20
 
-    def draw(self):
+        left_dots = part
+        left_os = small_part
+        right_dots = part
+        right_os = small_part
+
+        extra_width = width - (part * 2) - (small_part * 4) - 26
+        return [" {} ".format("_" * (width - 2)),
+                "|{} {}. |..... . .. . |{} [{:2d}] {}{}|".format(":" * left_dots, "o " * left_os, " " * extra_width, self.channel, "o " * right_os, ":" * right_dots),
+                "|{} {}  | ..  . ..... |{}      {}{}|".format(":" * left_dots, "o " * left_os, " " * extra_width, "o " * right_os, ":" * right_dots),
+                "|{}_{}__|__..._...__._|{}______{}{}|".format(":" * left_dots, "__" * left_os, "_" * extra_width, "__" * right_os, ":" * right_dots)]
+
+    def draw(self, width=57):
         chars = []
         size = 2
+        delim = Delimiter()
         active_notes = self.midi_state.active_notes(self.channel)
-        chars.append(Delimiter().draw())
-        for key in self.keys:
+        chars.append(delim.draw())
+
+        # Calculate how many keys can be shown on screen.
+        # If too few keys are available, instantiate more
+        # until the screen is filled.
+        end = width - len(set(range(width)) & set(delimiter_map)) + 1
+        len_before = len(self.keys)
+        if len_before < end:
+            for i in range(end - len_before):
+                self.keys.append(Key(i + len_before))
+
+        for key in self.keys[0:end]:
             if key > 1 and key - 1 in delimiter_map:
                 size += 1
-                chars.append(Delimiter().draw())
+                chars.append(delim.draw())
             size += 1
             if key + self.note_shift in active_notes:
                 key.activate()
             elif key.active():
                 key.deactivate()
             chars.append(key.draw())
-        chars.append(Delimiter().draw())
+        chars.append(delim.draw())
+        chars = chars[:width]
 
-        output = self.keyboard_header(size)
-
+        output = self.keyboard_header(width)
         for i in range(len(chars[0])):
-            line = ""
-            for j in range(len(chars)):
-                line += chars[j][i]
-            output.append(line)
+            output.append("".join([chars[j][i] for j in range(len(chars))]))
 
         return output
 
     def handle_message(self, msg):
-        # try:
-        #     self.channel = msg.channel
-        # except:
-        #     pass
         self.midi_state.handle_message(msg)
 
 
 class MidiPiano(Thread):
 
-    def __init__(self, port_in_name, port_out_name, octaves=4, callback=None):
+    def __init__(self, port_in_name, port_out_name, callback=None):
         super(MidiPiano, self).__init__()
         self.port_in_name = port_in_name
         self.port_out_name = port_out_name
         self.callback = callback
-        self.octaves = octaves
-        self.keyboard = Keyboard(octaves)
+        self.keyboard = Keyboard()
         self._stop_event = Event()
 
     def stop(self):
