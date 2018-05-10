@@ -17,13 +17,13 @@ class KeyState(Enum):
     ACTIVE = 1
 
 
-class Delimiter(object):
+class Delimiter():
 
     def draw(self):
         return "|||||"
 
 
-class Key(object):
+class Key():
 
     def __init__(self, num):
         super(Key, self).__init__()
@@ -128,7 +128,7 @@ class Key(object):
         return "Key(Index {}, {}, {})".format(self.num, self.type, self.state)
 
 
-class Keyboard(object):
+class Keyboard():
 
     def __init__(self, octaves=4, channel=0, note_shift=0):
         if not 0 < octaves < 11:

@@ -14,9 +14,9 @@
 
 import logging
 from time import time
+from song import Song, SongPart
 from collections import namedtuple
 from threading import Thread, Event
-from song import SongPart, CacheItem
 from abc import ABCMeta, abstractmethod
 from magenta.music import trim_note_sequence
 from magenta.protobuf.music_pb2 import NoteSequence
@@ -36,12 +36,15 @@ def adjust_sequence_times(sequence, delta_time):
     return retimed_sequence
 
 
-def generate_midi_chord(notes, start_time, duration=2):
-    output = []
-    velocity = 100
-    for note in notes:
-        output.append(Note(note, velocity, start_time, duration))
-    return output
+def generate_midi_chord(notes, start_time, duration=2, velocity=100):
+    return [Note(note, velocity, start_time, duration) for note in notes]
+
+
+class CacheItem():
+
+    def __init__(self, sequence, response_start_time):
+        self.sequence = sequence
+        self.response_start_time = response_start_time
 
 
 class MidiInteraction(Thread, metaclass=ABCMeta):
@@ -234,7 +237,8 @@ class SongStructureMidiInteraction(MidiInteraction):
 
         # Generate response.
         generator = self._sequence_generators[gen_index]
-        logging.warn("Generating sequence using '%s' generator.", generator.details.id)
+        logging.warn("Generating sequence using '%s' generator.",
+                     generator.details.id)
         # logging.warn('Generator Details: %s', generator.details)
         # logging.warn('Bundle Details: %s', generator.bundle_details)
         # logging.warn('Generator Options: %s', generator_options)

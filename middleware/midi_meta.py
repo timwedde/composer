@@ -20,7 +20,7 @@ white_keys = [[e + octave for e in white_key_map]
 white_keys_flattened = [e for l in white_keys for e in l]
 
 
-class MidiState(object):
+class MidiState():
     """
     Represents the current state of the virtual keyboard.
     Remembers active notes for every channel at the current timestep.
