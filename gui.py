@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # Architecture:
 #                      GUI
 #                       |
@@ -8,7 +10,7 @@
 #             vKeyboard   MIDI File
 
 import logging
-logging.basicConfig(filename="output.log", level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(filename="output.log", level=logging.WARN, format="%(asctime)s - %(levelname)s - %(message)s")
 
 import os
 import sys
@@ -19,9 +21,10 @@ from glob import glob
 from signal import signal, SIGINT
 
 from song import SongPart
+from middleware.virtual_keyboard import Keyboard
 from mido import get_input_names, get_output_names
+from middleware import MidiHarmonizer, MidiRecorder
 from midi_interface.midi_hub import MidiHub, TextureType
-from port_relay import MidiHarmonizer, MidiRecorder, Keyboard
 from midi_interface.midi_interaction import SongStructureMidiInteraction
 
 logging.debug("Importing magenta packages")
