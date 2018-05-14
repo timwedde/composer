@@ -14,6 +14,7 @@
 
 import logging
 from time import time
+from sys import getsizeof
 from song import Song, SongPart
 from collections import namedtuple
 from threading import Thread, Event
@@ -378,6 +379,11 @@ class SongStructureMidiInteraction(MidiInteraction):
                         response_start_time + response_duration)
                     self.DRUM_CACHE[part.name] = CacheItem(
                         drum_sequence, capture_start_time)
+
+                size = getsizeof(self.MELODY_CACHE)
+                size += getsizeof(self.BASS_CACHE)
+                size += getsizeof(self.DRUM_CACHE)
+                logging.info(f"Cache Size: {size // 8}KB")
 
                 chord_sequence = NoteSequence()
                 notes = []
