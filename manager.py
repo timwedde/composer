@@ -95,7 +95,7 @@ class ComposerManager():
         self.output_port = port
 
     def load_models(self):
-        for bundle_file in ["models/bass.mag", "models/melody.mag", "models/drums.mag"]:
+        for bundle_file in ["models/melody.mag", "models/bass.mag", "models/drums.mag"]:
             generator = load_generator_from_bundle_file(bundle_file)
             if generator:
                 self.generators.append(generator)

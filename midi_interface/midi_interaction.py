@@ -120,6 +120,7 @@ class SongStructureMidiInteraction(MidiInteraction):
 
     STRUCTURE = []
     MELODY_CACHE = {}
+    BASS_CACHE = {}
     DRUM_CACHE = {}
 
     def __init__(self,
@@ -157,6 +158,7 @@ class SongStructureMidiInteraction(MidiInteraction):
         self._midi_hub_3 = midi_hub_3
         self.STRUCTURE = structure
         self.MELODY_CACHE = {part.name: None for part in self.STRUCTURE}
+        self.BASS_CACHE = {part.name: None for part in self.STRUCTURE}
         self.DRUM_CACHE = {part.name: None for part in self.STRUCTURE}
         self._clock_signal = clock_signal
         self._tick_duration = tick_duration
@@ -334,14 +336,11 @@ class SongStructureMidiInteraction(MidiInteraction):
 
             if bars_played % part_duration == 0:
                 part = self.STRUCTURE[part_in_song]
-                # print(part)
+
                 if self.MELODY_CACHE[part.name]:
-                    # print("pulled melody from cache")
                     melody_sequence = self.MELODY_CACHE[part.name].sequence
-                    response_start_time = self.MELODY_CACHE[
-                        part.name].response_start_time
+                    response_start_time = self.MELODY_CACHE[part.name].response_start_time
                 else:
-                    # print("generating new melody sequence")
                     logging.info("new melody sequence")
                     melody_sequence = self._generate(
                         0,
@@ -352,16 +351,27 @@ class SongStructureMidiInteraction(MidiInteraction):
                     self.MELODY_CACHE[part.name] = CacheItem(
                         melody_sequence, capture_start_time)
 
-                if self.DRUM_CACHE[part.name]:
-                    # print("pulled drums from cache")
-                    drum_sequence = self.DRUM_CACHE[part.name].sequence
-                    response_start_time = self.DRUM_CACHE[
-                        part.name].response_start_time
+                if self.BASS_CACHE[part.name]:
+                    bass_sequence = self.BASS_CACHE[part.name].sequence
+                    response_start_time = self.BASS_CACHE[part.name].response_start_time
                 else:
-                    # print("generating new drum sequence")
+                    logging.info("new bass sequence")
+                    bass_sequence = self._generate(
+                        1,
+                        captured_sequence,
+                        capture_start_time,
+                        response_start_time,
+                        response_start_time + response_duration)
+                    self.BASS_CACHE[part.name] = CacheItem(
+                        bass_sequence, capture_start_time)
+
+                if self.DRUM_CACHE[part.name]:
+                    drum_sequence = self.DRUM_CACHE[part.name].sequence
+                    response_start_time = self.DRUM_CACHE[part.name].response_start_time
+                else:
                     logging.info("new drum sequence")
                     drum_sequence = self._generate(
-                        1,
+                        2,
                         captured_sequence,
                         capture_start_time,
                         response_start_time,
