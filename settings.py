@@ -1,3 +1,7 @@
+"""
+Container class for global settings variables.
+"""
+
 ### UI ###
 UPDATE_INTERVAL = 0.2
 
