@@ -18,12 +18,11 @@ import abc
 import time
 import logging
 import threading
-from queue import Queue
-from collections import deque
-from collections import defaultdict
+from queue import Queue, Empty
+from collections import defaultdict, deque
 
 ### Mido ###
-import mido
+from mido import Message, messages, ports, get_input_names, get_output_names, open_input, open_output  # pylint: disable-msg=no-name-in-module, line-too-long
 
 ### Tensorflow ###
 import tensorflow as tf
@@ -35,10 +34,10 @@ from magenta.protobuf import music_pb2
 _DEFAULT_METRONOME_TICK_DURATION = 0.05
 _DEFAULT_METRONOME_PROGRAM = 117  # Melodic Tom
 _DEFAULT_METRONOME_MESSAGES = [
-    mido.Message(type='note_on', note=44, velocity=64),
-    mido.Message(type='note_on', note=35, velocity=64),
-    mido.Message(type='note_on', note=35, velocity=64),
-    mido.Message(type='note_on', note=35, velocity=64),
+    Message(type='note_on', note=44, velocity=64),
+    Message(type='note_on', note=35, velocity=64),
+    Message(type='note_on', note=35, velocity=64),
+    Message(type='note_on', note=35, velocity=64),
 ]
 _DEFAULT_METRONOME_CHANNEL = 1
 
@@ -112,16 +111,16 @@ class MidiSignal(object):
         if not self._type:
             raise MidiHubException(
                 'Cannot build message if type is not inferrable.')
-        return mido.Message(self._type, **self._kwargs)
+        return Message(self._type, **self._kwargs)
 
     def __str__(self):
         if self._msg is not None:
-            regex_pattern = '^' + mido.messages.format_as_string(
+            regex_pattern = '^' + messages.format_as_string(
                 self._msg, include_time=False) + r' time=\d+.\d+$'
         else:
             # Generate regex pattern.
             parts = ['.*' if self._type is None else self._type]
-            for name in mido.messages.SPEC_BY_TYPE[self._inferred_types[0]][
+            for name in messages.SPEC_BY_TYPE[self._inferred_types[0]][
                     'value_names']:
                 if name in self._kwargs:
                     parts.append('%s=%d' % (name, self._kwargs[name]))
@@ -134,21 +133,20 @@ class MidiSignal(object):
 class Metronome(threading.Thread):
     daemon = True
 
-    def __init__(self, outport, qpm, start_time, stop_time=None, program=_DEFAULT_METRONOME_PROGRAM, signals=None, duration=_DEFAULT_METRONOME_TICK_DURATION, channel=None):
+    def __init__(self, outport, qpm, start_time, stop_time=None, program=_DEFAULT_METRONOME_PROGRAM,
+                 signals=None, duration=_DEFAULT_METRONOME_TICK_DURATION, channel=None):
         self._outport = outport
-        self.update(qpm, start_time, stop_time,
-                    program, signals, duration, channel)
+        self.update(qpm, start_time, stop_time, program, signals, duration, channel)
         super(Metronome, self).__init__()
 
-    def update(self, qpm, start_time, stop_time=None, program=_DEFAULT_METRONOME_PROGRAM, signals=None, duration=_DEFAULT_METRONOME_TICK_DURATION, channel=None):
+    def update(self, qpm, start_time, stop_time=None, program=_DEFAULT_METRONOME_PROGRAM,
+               signals=None, duration=_DEFAULT_METRONOME_TICK_DURATION, channel=None):
         # Locking is not required since variables are independent and assignment is
         # atomic.
         self._channel = _DEFAULT_METRONOME_CHANNEL if channel is None else channel
 
         # Set the program number for the channels.
-        self._outport.send(
-            mido.Message(
-                type='program_change', program=program, channel=self._channel))
+        self._outport.send(Message(type='program_change', program=program, channel=self._channel))
         self._period = 60. / qpm
         self._start_time = start_time
         self._stop_time = stop_time
@@ -180,12 +178,11 @@ class Metronome(threading.Thread):
 
             if tick_message.type == 'note_on':
                 sleeper.sleep(self._duration)
-                end_tick_message = mido.Message(
-                    'note_off', note=tick_message.note, channel=self._channel)
+                end_tick_message = Message('note_off', note=tick_message.note, channel=self._channel)
                 self._outport.send(end_tick_message)
 
     def stop(self, stop_time=0, block=True):
-        self._stop_time = stop_time
+        self._stop_time = stop_time  # pylint: disable-msg=attribute-defined-outside-init
         if block:
             self.join()
 
@@ -234,13 +231,10 @@ class MidiPlayer(threading.Thread):
         for note in sequence.notes:
             if note.start_time >= start_time:
                 new_message_list.append(
-                    mido.Message(type='note_on', note=note.pitch,
-                                 velocity=note.velocity, time=note.start_time))
-                new_message_list.append(
-                    mido.Message(type='note_off', note=note.pitch, time=note.end_time))
+                    Message(type='note_on', note=note.pitch, velocity=note.velocity, time=note.start_time))
+                new_message_list.append(Message(type='note_off', note=note.pitch, time=note.end_time))
             elif note.end_time >= start_time and note.pitch in self._open_notes:
-                new_message_list.append(
-                    mido.Message(type='note_off', note=note.pitch, time=note.end_time))
+                new_message_list.append(Message(type='note_off', note=note.pitch, time=note.end_time))
                 closed_notes.add(note.pitch)
 
         # Close remaining open notes at the next event time to avoid abruptly ending
@@ -250,8 +244,7 @@ class MidiPlayer(threading.Thread):
             next_event_time = (
                 min(msg.time for msg in new_message_list) if new_message_list else 0)
             for note in notes_to_close:
-                new_message_list.append(
-                    mido.Message(type='note_off', note=note, time=next_event_time))
+                new_message_list.append(Message(type='note_off', note=note, time=next_event_time))
 
         for msg in new_message_list:
             msg.channel = self._channel
@@ -294,8 +287,7 @@ class MidiPlayer(threading.Thread):
                 # Replace message queue with immediate end of open notes.
                 self._message_queue.clear()
                 for note in self._open_notes:
-                    self._message_queue.append(
-                        mido.Message(type='note_off', note=note, time=time.time()))
+                    self._message_queue.append(Message(type='note_off', note=note, time=time.time()))
                 self._update_cv.notify()
         if block:
             self.join()
@@ -308,13 +300,15 @@ class MidiCaptor(threading.Thread):
     _WAKE_MESSAGE = None
 
     def __init__(self, qpm, start_time=0, stop_time=None, stop_signal=None):
-                # A lock for synchronization.
+        # pylint: disable-msg=no-member
+        # A lock for synchronization.
         self._lock = threading.RLock()
         self._receive_queue = Queue()
         self._captured_sequence = music_pb2.NoteSequence()
         self._captured_sequence.tempos.add(qpm=qpm)
         self._start_time = start_time
         self._stop_time = stop_time
+        self._stop_time_unsafe = None
         self._stop_regex = re.compile(str(stop_signal))
         # A set of active MidiSignals being used by iterators.
         self._iter_signals = []
@@ -332,6 +326,7 @@ class MidiCaptor(threading.Thread):
     @start_time.setter
     @concurrency.serialized
     def start_time(self, value):
+        # pylint: disable-msg=no-member
         self._start_time = value
         i = 0
         for note in self._captured_sequence.notes:
@@ -362,6 +357,7 @@ class MidiCaptor(threading.Thread):
 
     def _add_note(self, msg):
         """Adds and returns a new open note based on the MIDI message."""
+        # pylint: disable-msg=no-member
         new_note = self._captured_sequence.notes.add()
         new_note.start_time = msg.time
         new_note.pitch = msg.note
@@ -380,7 +376,7 @@ class MidiCaptor(threading.Thread):
                     break
             try:
                 msg = self._receive_queue.get(block=True, timeout=timeout)
-            except Queue.Empty:
+            except Empty:
                 continue
 
             if msg is MidiCaptor._WAKE_MESSAGE:
@@ -427,6 +423,7 @@ class MidiCaptor(threading.Thread):
             self.join()
 
     def captured_sequence(self, end_time=None):
+        # pylint: disable-msg=no-member
         # Make a copy of the sequence currently being captured.
         current_captured_sequence = music_pb2.NoteSequence()
         with self._lock:
@@ -613,34 +610,34 @@ class MidiHub(object):
 
         if input_midi_ports:
             for port in input_midi_ports:
-                if isinstance(port, mido.ports.BaseInput):
+                if isinstance(port, ports.BaseInput):
                     inport = port
                 else:
-                    virtual = port not in mido.get_input_names()
+                    virtual = port not in get_input_names()
                     if virtual:
                         logging.info(
                             "Opening '%s' as a virtual MIDI port for input.", port)
-                    inport = mido.open_input(port, virtual=virtual)
+                    inport = open_input(port, virtual=virtual)
                 # Start processing incoming messages.
                 inport.callback = self._timestamp_and_handle_message
-                # TODO: this is needed because otherwise inport will get
+                # this is needed because otherwise inport will get
                 # garbage collected and stop receiving input events
                 self._inport = inport
         else:
-            logging.warn('No input port specified. Capture disabled.')
+            logging.warning('No input port specified. Capture disabled.')
             self._inport = None
 
         outports = []
         for port in output_midi_ports:
-            if isinstance(port, mido.ports.BaseInput):
+            if isinstance(port, ports.BaseInput):
                 outports.append(port)
             else:
-                virtual = port not in mido.get_output_names()
+                virtual = port not in get_output_names()
                 if virtual:
                     logging.info(
                         "Opening '%s' as a virtual MIDI port for output.", port)
-                outports.append(mido.open_output(port, virtual=virtual))
-        self._outport = mido.ports.MultiPort(outports)
+                outports.append(open_output(port, virtual=virtual))
+        self._outport = ports.MultiPort(outports)
 
     def __del__(self):
         for captor in self._captors:
@@ -665,8 +662,7 @@ class MidiHub(object):
             return
         # Close all open notes.
         while self._open_notes:
-            self._outport.send(mido.Message(
-                'note_off', note=self._open_notes.pop()))
+            self._outport.send(Message('note_off', note=self._open_notes.pop()))
         self._passthrough = value
 
     def _timestamp_and_handle_message(self, msg):
@@ -728,8 +724,7 @@ class MidiHub(object):
                 self._open_notes.remove(msg.note)
             elif msg.type == 'note_on' and msg.velocity > 0:
                 if self._open_notes:
-                    self._outport.send(
-                        mido.Message('note_off', note=self._open_notes.pop()))
+                    self._outport.send(Message('note_off', note=self._open_notes.pop()))
                 self._outport.send(msg)
                 self._open_notes.add(msg.note)
 
@@ -815,11 +810,7 @@ class MidiHub(object):
         return self._control_values.get(control_number)
 
     def send_control_change(self, control_number, value):
-        self._outport.send(
-            mido.Message(
-                type='control_change',
-                control=control_number,
-                value=value))
+        self._outport.send(Message(type='control_change', control=control_number, value=value))
 
     @concurrency.serialized
     def register_callback(self, fn, signal):
