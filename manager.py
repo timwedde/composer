@@ -13,7 +13,6 @@ from magenta.music.sequence_generator_bundle import read_bundle_file, GeneratorB
 from song import Song, SongPart
 from middleware.virtual_keyboard import Keyboard
 from middleware import MidiHarmonizer, MidiRecorder
-from midi_interface.midi_hub import MidiHub, TextureType
 from midi_interface.midi_interaction import SongStructureMidiInteraction
 
 ### Globals ###
@@ -67,7 +66,6 @@ class ComposerManager():
         self.interaction = None
         self.harmonizer = None
         self.recorder = None
-        self.midi_hub = None
         self.input_port = None
         self.output_port = None
         self.selected_song = None
@@ -112,8 +110,7 @@ class ComposerManager():
 
     def start_interaction(self, song):
         if not self.interaction:
-            self.midi_hub = MidiHub(None, [HARMONIZER_INPUT_NAME], TextureType.POLYPHONIC)
-            self.interaction = SongStructureMidiInteraction(self.midi_hub, self.generators, 120, tick_duration=4 * (60.0 / 120), structure=song, chord_passthrough=True)
+            self.interaction = SongStructureMidiInteraction(self.generators, 120, tick_duration=4 * (60.0 / 120), structure=song, chord_passthrough=True)
         if self.interaction and not self.interaction.stopped() and not self.interaction.is_alive():
             logging.info("Started MIDI interaction")
             self.interaction.start()
@@ -124,7 +121,6 @@ class ComposerManager():
             self.interaction.stop()
             self.interaction.join()
             self.interaction = None
-            self.midi_hub = None
             logging.info("Stopped MIDI interaction")
 
     def start_recorder(self):

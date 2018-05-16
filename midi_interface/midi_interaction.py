@@ -22,10 +22,15 @@ from threading import Thread, Event
 from abc import ABCMeta, abstractmethod
 from magenta.music import trim_note_sequence
 from magenta.protobuf.music_pb2 import NoteSequence
+from midi_interface.midi_hub import MidiHub, TextureType
 from magenta.protobuf.generator_pb2 import GeneratorOptions
 from magenta.music.testing_lib import add_track_to_sequence
 
 Note = namedtuple('Note', ['pitch', 'velocity', 'start', 'end'])
+
+
+# TODO: move this into a "settings" file for global variables
+HARMONIZER_INPUT_NAME = "vPort Harmonizer IN"
 
 
 def adjust_sequence_times(sequence, delta_time):
@@ -116,7 +121,6 @@ class SongStructureMidiInteraction(MidiInteraction):
     DRUM_CACHE = {}
 
     def __init__(self,
-                 midi_hub,
                  sequence_generators,
                  qpm,
                  structure,
@@ -137,6 +141,8 @@ class SongStructureMidiInteraction(MidiInteraction):
                  loop_control_number=None,
                  state_control_number=None,
                  ):
+        midi_hub = MidiHub(
+            None, [HARMONIZER_INPUT_NAME], TextureType.POLYPHONIC)
         super(SongStructureMidiInteraction, self).__init__(
             midi_hub, sequence_generators, qpm, generator_select_control_number,
             tempo_control_number, temperature_control_number)
