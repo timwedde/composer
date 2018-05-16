@@ -69,7 +69,8 @@ class ComposerManager():
         self.input_port = None
         self.output_port = None
         self.selected_song = None
-        self.keyboard = Keyboard(channel=1, note_shift=-36)
+        self.keyboard_melody = Keyboard(channel=1, note_shift=-36)
+        self.keyboard_bass = Keyboard(channel=2, note_shift=-36)
 
     def chord_passthrough(self, state):
         if self.interaction:
@@ -80,7 +81,8 @@ class ComposerManager():
         self.selected_song = song
 
     def note_callback(self, original_msg, new_msg):
-        self.keyboard.handle_message(new_msg)
+        self.keyboard_melody.handle_message(new_msg)
+        self.keyboard_bass.handle_message(new_msg)
 
     def set_input_port(self, port):
         logging.info(f"Input port set to '{port}'")

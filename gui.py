@@ -79,8 +79,8 @@ def make_progress_bar(smooth=False):
 class KeyboardWrap(urwid.Widget):
     _sizing = frozenset(['flow'])
 
-    def __init__(self, composer):
-        self.composer = composer
+    def __init__(self, keyboard):
+        self.keyboard = keyboard
 
     def rows(self, size, focus=False):
         # pylint: disable-msg=no-self-use
@@ -90,7 +90,7 @@ class KeyboardWrap(urwid.Widget):
     def render(self, size, focus=False):
         # pylint: disable-msg=unused-argument
         (maxcol,) = size
-        data = self.composer.keyboard.draw(maxcol)
+        data = self.keyboard.draw(maxcol)
         data = [d.encode() for d in data]
         return urwid.TextCanvas(data, maxcol=maxcol)
 
@@ -266,9 +266,11 @@ class TerminalGUI(urwid.WidgetWrap):
         hline = urwid.AttrMap(urwid.SolidFill("-"), "line")
 
         # content box
-        self.pud = KeyboardWrap(self.composer)
-        l = urwid.ListBox(urwid.SimpleListWalker([self.pud]))
-        content_box = urwid.Pile([("weight", 2, l), ("fixed", 1, hline), ("weight", 2, l)])
+        self.keyboard_melody = KeyboardWrap(self.composer.keyboard_melody)
+        self.keyboard_bass = KeyboardWrap(self.composer.keyboard_bass)
+        keyboard_melody_list = urwid.ListBox(urwid.SimpleListWalker([self.keyboard_melody]))
+        keyboard_bass_list = urwid.ListBox(urwid.SimpleListWalker([self.keyboard_bass]))
+        content_box = urwid.Pile([("weight", 2, keyboard_melody_list), ("fixed", 1, hline), ("weight", 2, keyboard_bass_list)])
 
         # side panel
         controls = self.controls()
@@ -309,7 +311,8 @@ class TerminalGUI(urwid.WidgetWrap):
             self.on_output_port_change(out_port[0])
 
     def update_screen(self):
-        self.pud._invalidate() # pylint: disable-msg=protected-access
+        self.keyboard_melody._invalidate() # pylint: disable-msg=protected-access
+        self.keyboard_bass._invalidate() # pylint: disable-msg=protected-access
         if self.current_song_started:
             progress = ((time() - self.current_song_started) / 48)
             self.animate_progress.set_completion(progress)
@@ -338,16 +341,15 @@ class TerminalGUI(urwid.WidgetWrap):
         self.loop = urwid.MainLoop(self, self.palette, unhandled_input=self.unhandled_input)
         self.loop.run()
 
-APP = None
-
 def main():
-    APP = TerminalGUI()
-    APP.main()
+    global app
+    app = TerminalGUI()
+    app.main()
 
 def signal_handler(sig, frame):
     # pylint: disable-msg=unused-argument
     logging.info("Received SIGINT, stopping...")
-    APP.exit_program()
+    app.exit_program()
 
 if __name__ == "__main__":
     signal(SIGINT, signal_handler)
