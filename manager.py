@@ -10,7 +10,7 @@ from magenta.models.pianoroll_rnn_nade import pianoroll_rnn_nade_sequence_genera
 from magenta.music.sequence_generator_bundle import read_bundle_file, GeneratorBundleParseException
 
 ### Local ###
-from settings import *
+from settings import * # pylint: disable-msg=wildcard-import
 from song import Song, SongPart
 from middleware.virtual_keyboard import Keyboard
 from middleware import MidiHarmonizer, MidiRecorder
@@ -28,19 +28,19 @@ def load_generator_from_bundle_file(bundle_file):
     try:
         bundle = read_bundle_file(bundle_file)
     except GeneratorBundleParseException:
-        logging.warn("Failed to parse '{}'".format(bundle_file))
+        logging.warning("Failed to parse '{}'".format(bundle_file))
         return None
 
-    generator_id = bundle.generator_details.id
+    generator_id = bundle.generator_details.id # pylint: disable-msg=no-member
     if generator_id not in GENERATOR_MAP:
-        logging.warn("Unrecognized SequenceGenerator ID '{}' in '{}'".format(
+        logging.warning("Unrecognized SequenceGenerator ID '{}' in '{}'".format(
             generator_id, bundle_file))
         return None
 
     generator = GENERATOR_MAP[generator_id](checkpoint=None, bundle=bundle)
     generator.initialize()
     logging.info("Loaded '{}' generator bundle from file '{}'".format(
-        bundle.generator_details.id, bundle_file))
+        bundle.generator_details.id, bundle_file)) # pylint: disable-msg=no-member
     return generator
 
 
@@ -51,7 +51,7 @@ def load_song(file):
         for line in f:
             parts = [l.strip() for l in line.split(",")]
             sp = SongPart(parts[0], parts[1:])
-            if chords_per_part.get(sp.name, False) and len(sp) == 0:
+            if chords_per_part.get(sp.name, False) and not sp:
                 sp = chords_per_part[sp.name]
             structure.append(sp)
             chords_per_part[sp.name] = sp
@@ -81,6 +81,7 @@ class ComposerManager():
         self.selected_song = song
 
     def note_callback(self, original_msg, new_msg):
+        # pylint: disable-msg=unused-argument
         self.keyboard_melody.handle_message(new_msg)
         self.keyboard_bass.handle_message(new_msg)
 

@@ -54,7 +54,8 @@ confidence=
 # --enable=similarities". If you want to run only the classes checker, but have
 # no Warning level messages displayed, use"--disable=all --enable=classes
 # --disable=W"
-disable=logging-format-interpolation,
+disable=too-many-instance-attributes,
+        logging-format-interpolation,
         wrong-import-position,
         print-statement,
         parameter-unpacking,
