@@ -1,3 +1,4 @@
+### Local ###
 from mingus.containers import NoteContainer
 from mingus.core.progressions import to_chords
 from mingus.core.keys import Key

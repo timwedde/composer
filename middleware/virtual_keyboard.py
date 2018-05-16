@@ -1,7 +1,12 @@
+### System ###
 from enum import Enum
 from time import sleep
 from threading import Thread, Event
+
+### Mido ###
 from mido import open_input, open_output, get_input_names, get_output_names
+
+### Local ###
 from .midi_meta import white_keys, black_keys, black_keys_flattened, MidiState
 
 delimiter_map = sorted([e[2] for e in white_keys] + [e[5] for e in white_keys])

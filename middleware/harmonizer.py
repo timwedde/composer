@@ -1,8 +1,13 @@
+### System ###
 from time import sleep
 from threading import Thread, Event
 from sortedcontainers import SortedSet
-from .midi_meta import MidiState, major_notes
+
+### Mido ###
 from mido import open_input, open_output, get_input_names, get_output_names
+
+### Local ###
+from .midi_meta import MidiState, major_notes
 
 
 class MidiHarmonizer(Thread):

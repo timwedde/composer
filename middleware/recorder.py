@@ -1,7 +1,10 @@
+### System ###
 from time import sleep, time
 from threading import Thread, Event
-from mido.midifiles.tracks import _to_reltime
 from decimal import Decimal, ROUND_DOWN, localcontext
+
+### Mido ###
+from mido.midifiles.tracks import _to_reltime
 from mido.midifiles.units import second2tick, bpm2tempo
 from mido import open_input, open_output, get_input_names, get_output_names, MidiFile, MidiTrack
 

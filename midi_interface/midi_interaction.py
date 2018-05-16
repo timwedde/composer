@@ -12,20 +12,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+### System ###
 import logging
 from time import time
 from enum import Enum
-from settings import *
 from sys import getsizeof
-from song import Song, SongPart
 from collections import namedtuple
 from threading import Thread, Event
 from abc import ABCMeta, abstractmethod
+
+### Magenta ###
 from magenta.music import trim_note_sequence
 from magenta.protobuf.music_pb2 import NoteSequence
-from midi_interface.midi_hub import MidiHub, TextureType
-from magenta.protobuf.generator_pb2 import GeneratorOptions
 from magenta.music.testing_lib import add_track_to_sequence
+from magenta.protobuf.generator_pb2 import GeneratorOptions
+
+### Local ###
+from settings import *
+from song import Song, SongPart
+from midi_interface.midi_hub import MidiHub, TextureType
 
 Note = namedtuple('Note', ['pitch', 'velocity', 'start', 'end'])
 
