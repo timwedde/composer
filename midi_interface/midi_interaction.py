@@ -28,14 +28,14 @@ from magenta.music.testing_lib import add_track_to_sequence
 from magenta.protobuf.generator_pb2 import GeneratorOptions
 
 ### Local ###
-from settings import *
-from song import Song, SongPart
+from settings import HARMONIZER_INPUT_NAME
 from midi_interface import MidiHub, TextureType
 
 Note = namedtuple('Note', ['pitch', 'velocity', 'start', 'end'])
 
 
 def adjust_sequence_times(sequence, delta_time):
+    # pylint: disable-msg=no-member
     retimed_sequence = NoteSequence()
     retimed_sequence.CopyFrom(sequence)
     for note in retimed_sequence.notes:
@@ -141,8 +141,7 @@ class SongStructureMidiInteraction(MidiInteraction):
                  tempo_control_number=None,
                  temperature_control_number=None,
                  loop_control_number=None,
-                 state_control_number=None,
-                 ):
+                 state_control_number=None):
         midi_hub = MidiHub(
             None, [HARMONIZER_INPUT_NAME], TextureType.POLYPHONIC)
         super(SongStructureMidiInteraction, self).__init__(
@@ -168,6 +167,7 @@ class SongStructureMidiInteraction(MidiInteraction):
         self._loop_control_number = loop_control_number
         self._state_control_number = state_control_number
         self.chord_passthrough = chord_passthrough
+        self._captor = None
         # Event for signalling when to end a call.
         self._end_call = Event()
         # Event for signalling when to flush playback sequence.
@@ -207,7 +207,7 @@ class SongStructureMidiInteraction(MidiInteraction):
 
     @property
     def _should_loop(self):
-        return (self._loop_control_number and self._midi_hub.control_value(self._loop_control_number) == 127)
+        return self._loop_control_number and self._midi_hub.control_value(self._loop_control_number) == 127
 
     def stop(self):
         self._stop_signal.set()
@@ -216,6 +216,7 @@ class SongStructureMidiInteraction(MidiInteraction):
         super(SongStructureMidiInteraction, self).stop()
 
     def _generate(self, gen_index, input_sequence, zero_time, response_start_time, response_end_time):
+        # pylint: disable-msg=no-member
         response_start_time -= zero_time
         response_end_time -= zero_time
 
@@ -320,13 +321,12 @@ class SongStructureMidiInteraction(MidiInteraction):
             bar_in_part = bars_played % part_duration
             if part_in_song >= len(self.STRUCTURE):
                 break
-            # print("{} [BAR {}]".format(self.STRUCTURE[part_in_song], bar_in_part))
+
             response_duration = part_duration * tick_duration
             response_start_time = tick_time
             capture_start_time = self._captor.start_time
             if silent_tick:  # Move the sequence forward one tick in time.
-                captured_sequence = adjust_sequence_times(
-                    captured_sequence, tick_duration)
+                captured_sequence = adjust_sequence_times(captured_sequence, tick_duration)
                 captured_sequence.total_time = tick_time
                 capture_start_time += tick_duration
 
@@ -413,10 +413,10 @@ class SongStructureMidiInteraction(MidiInteraction):
                         part.name].response_start_time = response_start_time
                     self.DRUM_CACHE[
                         part.name].response_start_time = response_start_time
-                    logging.warn(
-                        'Response too late. Pushing back %d ticks.', push_ticks)
+                    logging.warning('Response too late. Pushing back %d ticks.', push_ticks)
 
-                # Start response playback. Specify the start_time to avoid stripping initial events due to generation lag.
+                # Start response playback. Specify the start_time to avoid
+                # stripping initial events due to generation lag.
                 # Before playback:
                 # - transpose melody and bass for MelodicFlow
                 # - map notes that lie on black keys to a white key to prevent triggering MelodicFlow
