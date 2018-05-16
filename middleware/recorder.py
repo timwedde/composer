@@ -18,7 +18,7 @@ class MidiRecorder(Thread):
         self.port_out_name = port_out_name
         self.callback = callback
         self.first_time = None
-        self.tracks = [MidiTrack(), MidiTrack(), MidiTrack()]
+        self.tracks = [MidiTrack(), MidiTrack(), MidiTrack(), MidiTrack()]
         self._stop_event = Event()
 
     def stop(self):

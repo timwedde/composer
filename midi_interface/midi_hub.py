@@ -577,10 +577,9 @@ class PolyphonicMidiCaptor(MidiCaptor):
 
 class MidiHub(object):
 
-    def __init__(self, input_midi_ports, output_midi_ports, texture_type, passthrough=True, playback_channel=0, playback_offset=0.0):
+    def __init__(self, input_midi_ports, output_midi_ports, texture_type, passthrough=True, playback_offset=0.0):
         self._texture_type = texture_type
         self._passthrough = passthrough
-        self._playback_channel = playback_channel
         self._playback_offset = playback_offset
         # When `passthrough` is True, this is the set of open MIDI note
         # pitches.
@@ -794,10 +793,8 @@ class MidiHub(object):
         self._metronome.stop(stop_time, block)
         self._metronome = None
 
-    def start_playback(self, sequence, start_time=time.time(),
-                       allow_updates=False):
-        player = MidiPlayer(self._outport, sequence, start_time, allow_updates,
-                            self._playback_channel, self._playback_offset)
+    def start_playback(self, sequence, playback_channel=0, start_time=time.time(), allow_updates=False):
+        player = MidiPlayer(self._outport, sequence, start_time, allow_updates, playback_channel, self._playback_offset)
         with self._lock:
             self._players.append(player)
         player.start()
