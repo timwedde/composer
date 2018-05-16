@@ -25,13 +25,14 @@ from signal import signal, SIGINT
 import urwid
 
 ### Mido ###
-from mido import get_input_names, get_output_names # pylint: disable-msg=no-name-in-module
+from mido import get_input_names, get_output_names  # pylint: disable-msg=no-name-in-module
 
 ### Local ###
 from manager import ComposerManager
 
 ### Globals ###
-UPDATE_INTERVAL = 0.2
+from settings import UPDATE_INTERVAL
+
 
 def list_songs():
     if not os.path.exists("songs"):
@@ -45,6 +46,8 @@ def list_songs():
     return songs
 
 ### GUI functions ###
+
+
 def window_shadow(w, shadow=False):
     bg = urwid.AttrWrap(urwid.SolidFill(u"\u2592"), "screen edge")
     if shadow:
@@ -61,20 +64,24 @@ def window_shadow(w, shadow=False):
                           ("fixed top", 1), ("fixed bottom", 1))
     return w
 
+
 def make_button(t, fn):
     w = urwid.Button(t, fn)
     w = urwid.AttrWrap(w, "button normal", "button select")
     return w
+
 
 def make_radio_button(g, l, fn):
     w = urwid.RadioButton(g, l, False, on_state_change=fn)
     w = urwid.AttrWrap(w, "button normal", "button select")
     return w
 
+
 def make_progress_bar(smooth=False):
     if smooth:
         return urwid.ProgressBar("pg normal", "pg complete", 0, 1, "pg smooth")
     return urwid.ProgressBar("pg normal", "pg complete", 0, 1)
+
 
 class KeyboardWrap(urwid.Widget):
     _sizing = frozenset(['flow'])
@@ -93,6 +100,7 @@ class KeyboardWrap(urwid.Widget):
         data = self.keyboard.draw(maxcol)
         data = [d.encode() for d in data]
         return urwid.TextCanvas(data, maxcol=maxcol)
+
 
 class TerminalGUI(urwid.WidgetWrap):
     palette = [
@@ -113,7 +121,7 @@ class TerminalGUI(urwid.WidgetWrap):
         ("pg complete", "white", "dark magenta"),
         ("pg smooth", "dark magenta", "black"),
         ("bigtext", "white", "black"),
-        ]
+    ]
 
     def __init__(self):
         self.started = False
@@ -130,7 +138,7 @@ class TerminalGUI(urwid.WidgetWrap):
         self.composer = ComposerManager()
         self.composer.load_models()
         urwid.WidgetWrap.__init__(self, self.main_window())
-        self.reset() # initialize the view after the window is rendered
+        self.reset()  # initialize the view after the window is rendered
 
     def on_start_button(self, button):
         if self.started:
@@ -184,14 +192,16 @@ class TerminalGUI(urwid.WidgetWrap):
 
     def on_chord_passthrough_checkbox(self, w, state):
         # pylint: disable-msg=unused-argument
-        logging.info("{} Chord Passthrough".format("Enabled" if state else "Disabled"))
+        logging.info("{} Chord Passthrough".format(
+            "Enabled" if state else "Disabled"))
         self.composer.chord_passthrough(state)
 
     def on_unicode_checkbox(self, w, state):
         # pylint: disable-msg=unused-argument
-        logging.info("{} Unicode Graphics".format("Enabled" if state else "Disabled"))
+        logging.info("{} Unicode Graphics".format(
+            "Enabled" if state else "Disabled"))
         self.animate_progress = make_progress_bar(state)
-        self.animate_progress_wrap._w = self.animate_progress # pylint: disable-msg=protected-access
+        self.animate_progress_wrap._w = self.animate_progress  # pylint: disable-msg=protected-access
         self.update_screen()
 
     def controls(self):
@@ -268,9 +278,12 @@ class TerminalGUI(urwid.WidgetWrap):
         # content box
         self.keyboard_melody = KeyboardWrap(self.composer.keyboard_melody)
         self.keyboard_bass = KeyboardWrap(self.composer.keyboard_bass)
-        keyboard_melody_list = urwid.ListBox(urwid.SimpleListWalker([self.keyboard_melody]))
-        keyboard_bass_list = urwid.ListBox(urwid.SimpleListWalker([self.keyboard_bass]))
-        content_box = urwid.Pile([("weight", 2, keyboard_melody_list), ("fixed", 1, hline), ("weight", 2, keyboard_bass_list)])
+        keyboard_melody_list = urwid.ListBox(
+            urwid.SimpleListWalker([self.keyboard_melody]))
+        keyboard_bass_list = urwid.ListBox(
+            urwid.SimpleListWalker([self.keyboard_bass]))
+        content_box = urwid.Pile([("weight", 2, keyboard_melody_list),
+                                  ("fixed", 1, hline), ("weight", 2, keyboard_bass_list)])
 
         # side panel
         controls = self.controls()
@@ -311,8 +324,8 @@ class TerminalGUI(urwid.WidgetWrap):
             self.on_output_port_change(out_port[0])
 
     def update_screen(self):
-        self.keyboard_melody._invalidate() # pylint: disable-msg=protected-access
-        self.keyboard_bass._invalidate() # pylint: disable-msg=protected-access
+        self.keyboard_melody._invalidate()  # pylint: disable-msg=protected-access
+        self.keyboard_bass._invalidate()  # pylint: disable-msg=protected-access
         if self.current_song_started:
             progress = ((time() - self.current_song_started) / 48)
             self.animate_progress.set_completion(progress)
@@ -320,7 +333,8 @@ class TerminalGUI(urwid.WidgetWrap):
     def refresh(self, loop=None, user_data=None):
         # pylint: disable-msg=unused-argument
         self.update_screen()
-        self.animate_alarm = self.loop.set_alarm_in(UPDATE_INTERVAL, self.refresh)
+        self.animate_alarm = self.loop.set_alarm_in(
+            UPDATE_INTERVAL, self.refresh)
 
     def stop_refresh(self):
         logging.info("Stopped")
@@ -338,13 +352,16 @@ class TerminalGUI(urwid.WidgetWrap):
             self.exit_program()
 
     def main(self):
-        self.loop = urwid.MainLoop(self, self.palette, unhandled_input=self.unhandled_input)
+        self.loop = urwid.MainLoop(
+            self, self.palette, unhandled_input=self.unhandled_input)
         self.loop.run()
+
 
 def main():
     global app
     app = TerminalGUI()
     app.main()
+
 
 def signal_handler(sig, frame):
     # pylint: disable-msg=unused-argument

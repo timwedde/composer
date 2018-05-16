@@ -10,6 +10,7 @@ from magenta.models.pianoroll_rnn_nade import pianoroll_rnn_nade_sequence_genera
 from magenta.music.sequence_generator_bundle import read_bundle_file, GeneratorBundleParseException
 
 ### Local ###
+from settings import *
 from song import Song, SongPart
 from middleware.virtual_keyboard import Keyboard
 from middleware import MidiHarmonizer, MidiRecorder
@@ -22,11 +23,6 @@ GENERATOR_MAP.update(performance_sequence_generator.get_generator_map())
 GENERATOR_MAP.update(pianoroll_rnn_nade_sequence_generator.get_generator_map())
 GENERATOR_MAP.update(polyphony_sequence_generator.get_generator_map())
 
-HARMONIZER_INPUT_NAME = "vPort Harmonizer IN"
-HARMONIZER_OUTPUT_NAME = "vPort Harmonizer OUT"
-
-RECORDER_INPUT_NAME = "vPort Recorder IN"
-RECORDER_OUTPUT_NAME = "vPort Recorder OUT"
 
 def load_generator_from_bundle_file(bundle_file):
     try:
@@ -37,13 +33,16 @@ def load_generator_from_bundle_file(bundle_file):
 
     generator_id = bundle.generator_details.id
     if generator_id not in GENERATOR_MAP:
-        logging.warn("Unrecognized SequenceGenerator ID '{}' in '{}'".format(generator_id, bundle_file))
+        logging.warn("Unrecognized SequenceGenerator ID '{}' in '{}'".format(
+            generator_id, bundle_file))
         return None
 
     generator = GENERATOR_MAP[generator_id](checkpoint=None, bundle=bundle)
     generator.initialize()
-    logging.info("Loaded '{}' generator bundle from file '{}'".format(bundle.generator_details.id, bundle_file))
+    logging.info("Loaded '{}' generator bundle from file '{}'".format(
+        bundle.generator_details.id, bundle_file))
     return generator
+
 
 def load_song(file):
     structure = Song()
@@ -58,6 +57,7 @@ def load_song(file):
             chords_per_part[sp.name] = sp
     logging.info(f"Loaded '{file}' with structure: {structure}")
     return structure
+
 
 class ComposerManager():
 
@@ -112,7 +112,8 @@ class ComposerManager():
 
     def start_interaction(self, song):
         if not self.interaction:
-            self.interaction = SongStructureMidiInteraction(self.generators, 120, tick_duration=4 * (60.0 / 120), structure=song, chord_passthrough=True)
+            self.interaction = SongStructureMidiInteraction(
+                self.generators, 120, tick_duration=4 * (60.0 / 120), structure=song, chord_passthrough=True)
         if self.interaction and not self.interaction.stopped() and not self.interaction.is_alive():
             logging.info("Started MIDI interaction")
             self.interaction.start()
@@ -127,7 +128,8 @@ class ComposerManager():
 
     def start_recorder(self):
         if not self.recorder:
-            self.recorder = MidiRecorder(HARMONIZER_OUTPUT_NAME, self.output_port if self.output_port else RECORDER_OUTPUT_NAME)
+            self.recorder = MidiRecorder(
+                HARMONIZER_OUTPUT_NAME, self.output_port if self.output_port else RECORDER_OUTPUT_NAME)
         if self.recorder and not self.recorder.stopped() and not self.recorder.is_alive():
             logging.info("Started MIDI recorder")
             self.recorder.start()
@@ -142,7 +144,8 @@ class ComposerManager():
 
     def start_harmonizer(self):
         if not self.harmonizer:
-            self.harmonizer = MidiHarmonizer(HARMONIZER_INPUT_NAME, HARMONIZER_OUTPUT_NAME, callback=self.note_callback)
+            self.harmonizer = MidiHarmonizer(
+                HARMONIZER_INPUT_NAME, HARMONIZER_OUTPUT_NAME, callback=self.note_callback)
         if self.harmonizer and not self.harmonizer.stopped() and not self.harmonizer.is_alive():
             logging.info("Started MIDI harmonizer")
             self.harmonizer.start()

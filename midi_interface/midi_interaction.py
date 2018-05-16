@@ -15,6 +15,7 @@
 import logging
 from time import time
 from enum import Enum
+from settings import *
 from sys import getsizeof
 from song import Song, SongPart
 from collections import namedtuple
@@ -27,10 +28,6 @@ from magenta.protobuf.generator_pb2 import GeneratorOptions
 from magenta.music.testing_lib import add_track_to_sequence
 
 Note = namedtuple('Note', ['pitch', 'velocity', 'start', 'end'])
-
-
-# TODO: move this into a "settings" file for global variables
-HARMONIZER_INPUT_NAME = "vPort Harmonizer IN"
 
 
 def adjust_sequence_times(sequence, delta_time):
