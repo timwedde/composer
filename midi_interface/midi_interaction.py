@@ -30,7 +30,7 @@ from magenta.protobuf.generator_pb2 import GeneratorOptions
 ### Local ###
 from settings import *
 from song import Song, SongPart
-from midi_interface.midi_hub import MidiHub, TextureType
+from midi_interface import MidiHub, TextureType
 
 Note = namedtuple('Note', ['pitch', 'velocity', 'start', 'end'])
 

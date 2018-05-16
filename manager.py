@@ -14,7 +14,7 @@ from settings import *
 from song import Song, SongPart
 from middleware.virtual_keyboard import Keyboard
 from middleware import MidiHarmonizer, MidiRecorder
-from midi_interface.midi_interaction import SongStructureMidiInteraction
+from midi_interface import SongStructureMidiInteraction
 
 ### Globals ###
 GENERATOR_MAP = melody_rnn_sequence_generator.get_generator_map()

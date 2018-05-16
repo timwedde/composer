@@ -12,16 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+### System ###
 import re
 import abc
 import time
-import mido
 import logging
 import threading
 from queue import Queue
-import tensorflow as tf
 from collections import deque
 from collections import defaultdict
+
+### Mido ###
+import mido
+
+### Tensorflow ###
+import tensorflow as tf
+
+### Magenta ###
 from magenta.common import concurrency
 from magenta.protobuf import music_pb2
 
@@ -697,7 +704,7 @@ class MidiHub(object):
         if msg.type == 'control_change':
             if self._control_values.get(msg.control, None) != msg.value:
                 logging.debug('Control change %d: %d',
-                             msg.control, msg.value)
+                              msg.control, msg.value)
             self._control_values[msg.control] = msg.value
 
         # Pass the message through to the output port, if appropriate.
@@ -794,7 +801,8 @@ class MidiHub(object):
         self._metronome = None
 
     def start_playback(self, sequence, playback_channel=0, start_time=time.time(), allow_updates=False):
-        player = MidiPlayer(self._outport, sequence, start_time, allow_updates, playback_channel, self._playback_offset)
+        player = MidiPlayer(self._outport, sequence, start_time,
+                            allow_updates, playback_channel, self._playback_offset)
         with self._lock:
             self._players.append(player)
         player.start()
