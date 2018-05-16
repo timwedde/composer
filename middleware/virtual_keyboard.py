@@ -4,12 +4,12 @@ from time import sleep
 from threading import Thread, Event
 
 ### Mido ###
-from mido import open_input, open_output, get_input_names, get_output_names
+from mido import open_input, open_output, get_input_names, get_output_names # pylint: disable-msg=no-name-in-module
 
 ### Local ###
-from .midi_meta import white_keys, black_keys, black_keys_flattened, MidiState
+from .midi_meta import white_keys, black_keys_flattened, MidiState
 
-delimiter_map = sorted([e[2] for e in white_keys] + [e[5] for e in white_keys])
+DELIMITER_MAP = sorted([e[2] for e in white_keys] + [e[5] for e in white_keys])
 
 
 class KeyType(Enum):
@@ -48,21 +48,18 @@ class Key():
         if self.type == KeyType.WHITE:
             if self.state == KeyState.INACTIVE:
                 return "    _"
-            else:
-                return "xxxxx"
+            return "xxxxx"
         else:
             if self.state == KeyState.INACTIVE:
                 return "###||"
-            else:
-                return "ooo||"
+            return "ooo||"
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
             return self.num == other.num
         elif isinstance(other, int):
             return self.num == other
-        else:
-            return False
+        return False
 
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -151,9 +148,9 @@ class Keyboard():
 
         extra_width = width - (part * 2) - (small_part * 4) - 26
         return [" {} ".format("_" * (width - 2)),
-                "|{} {}. |..... . .. . |{} [{:2d}] {}{}|".format(":" * left_dots, "o " * left_os, " " * extra_width, self.channel, "o " * right_os, ":" * right_dots),
-                "|{} {}  | ..  . ..... |{}      {}{}|".format(":" * left_dots, "o " * left_os, " " * extra_width, "o " * right_os, ":" * right_dots),
-                "|{}_{}__|__..._...__._|{}______{}{}|".format(":" * left_dots, "__" * left_os, "_" * extra_width, "__" * right_os, ":" * right_dots)]
+                "|{} {}. |..... . .. . |{} [{:2d}] {}{}|".format(":" * left_dots, "o " * left_os, " " * extra_width, self.channel, "o " * right_os, ":" * right_dots), # pylint: disable-msg=line-too-long
+                "|{} {}  | ..  . ..... |{}      {}{}|".format(":" * left_dots, "o " * left_os, " " * extra_width, "o " * right_os, ":" * right_dots), # pylint: disable-msg=line-too-long
+                "|{}_{}__|__..._...__._|{}______{}{}|".format(":" * left_dots, "__" * left_os, "_" * extra_width, "__" * right_os, ":" * right_dots)] # pylint: disable-msg=line-too-long
 
     def draw(self, width=57):
         chars = []
@@ -165,14 +162,14 @@ class Keyboard():
         # Calculate how many keys can be shown on screen.
         # If too few keys are available, instantiate more
         # until the screen is filled.
-        end = width - len(set(range(width)) & set(delimiter_map)) + 1
+        end = width - len(set(range(width)) & set(DELIMITER_MAP)) + 1
         len_before = len(self.keys)
         if len_before < end:
             for i in range(end - len_before):
                 self.keys.append(Key(i + len_before))
 
         for key in self.keys[0:end]:
-            if key > 1 and key - 1 in delimiter_map:
+            if key > 1 and key - 1 in DELIMITER_MAP:
                 size += 1
                 chars.append(delim.draw())
             size += 1
@@ -199,7 +196,9 @@ class MidiPiano(Thread):
     def __init__(self, port_in_name, port_out_name, callback=None):
         super(MidiPiano, self).__init__()
         self.port_in_name = port_in_name
+        self.port_in = None
         self.port_out_name = port_out_name
+        self.port_out = None
         self.callback = callback
         self.keyboard = Keyboard()
         self._stop_event = Event()
