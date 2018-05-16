@@ -6,7 +6,7 @@ from decimal import Decimal, ROUND_DOWN, localcontext
 ### Mido ###
 from mido.midifiles.tracks import _to_reltime
 from mido.midifiles.units import second2tick, bpm2tempo
-from mido import open_input, open_output, get_input_names, get_output_names, MidiFile, MidiTrack
+from mido import open_input, open_output, get_input_names, get_output_names, MidiFile, MidiTrack # pylint: disable-msg=no-name-in-module, line-too-long
 
 
 class MidiRecorder(Thread):
@@ -18,7 +18,9 @@ class MidiRecorder(Thread):
     def __init__(self, port_in_name, port_out_name, callback=None):
         super(MidiRecorder, self).__init__()
         self.port_in_name = port_in_name
+        self.port_in = None
         self.port_out_name = port_out_name
+        self.port_out = None
         self.callback = callback
         self.first_time = None
         self.tracks = [MidiTrack(), MidiTrack(), MidiTrack(), MidiTrack()]
@@ -81,7 +83,7 @@ class MidiRecorder(Thread):
                 self.tracks[0].append(msg)
             else:
                 self.tracks[msg.channel].append(msg)
-        except:
+        except IndexError:
             pass
 
         if self.callback:
