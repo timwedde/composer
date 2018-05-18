@@ -11,7 +11,7 @@ from magenta.music.sequence_generator_bundle import read_bundle_file, GeneratorB
 
 ### Local ###
 from settings import * # pylint: disable-msg=wildcard-import
-from song import Song, SongPart
+from .song import Song, SongPart
 from middleware.virtual_keyboard import Keyboard
 from middleware import MidiHarmonizer, MidiRecorder
 from midi_interface import SongStructureMidiInteraction

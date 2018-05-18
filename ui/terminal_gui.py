@@ -1,25 +1,10 @@
 #!/usr/bin/env python3
 
-# Architecture:
-#                      GUI
-#                       |
-#     __________________|__________________
-#     |           |           |           |
-# Magenta -> Harmonizer -> Recorder -> Synthesizer
-#                 |           |
-#             vKeyboard   MIDI File
-
-### Logging ###
-import logging
-logging.basicConfig(filename="output.log",
-                    level=logging.INFO,
-                    format="%(asctime)s - %(levelname)s - %(message)s")
-
 ### System ###
 import os
+import logging
 from time import time
 from glob import glob
-from signal import signal, SIGINT
 
 ### Packages ###
 import urwid
@@ -28,7 +13,7 @@ import urwid
 from mido import get_input_names, get_output_names  # pylint: disable-msg=no-name-in-module
 
 ### Local ###
-from manager import ComposerManager
+from backend import ComposerManager
 
 ### Globals ###
 from settings import UPDATE_INTERVAL
@@ -44,8 +29,6 @@ def list_songs():
         logging.info("Found {}".format(file))
         songs.append(file)
     return songs
-
-### GUI functions ###
 
 
 def window_shadow(w, shadow=False):
@@ -355,20 +338,3 @@ class TerminalGUI(urwid.WidgetWrap):
         self.loop = urwid.MainLoop(
             self, self.palette, unhandled_input=self.unhandled_input)
         self.loop.run()
-
-
-def main():
-    global app
-    app = TerminalGUI()
-    app.main()
-
-
-def signal_handler(sig, frame):
-    # pylint: disable-msg=unused-argument
-    logging.info("Received SIGINT, stopping...")
-    app.exit_program()
-
-if __name__ == "__main__":
-    signal(SIGINT, signal_handler)
-    main()
-    logging.info("Done")
