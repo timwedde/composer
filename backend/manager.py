@@ -70,7 +70,7 @@ class ComposerManager():
         self.output_port = None
         self.selected_song = None
         self.keyboard_melody = Keyboard(channel=1, note_shift=-36)
-        self.keyboard_bass = Keyboard(channel=2, note_shift=-36)
+        self.keyboard_bass = Keyboard(channel=2, note_shift=-12)
 
     def chord_passthrough(self, state):
         if self.interaction:

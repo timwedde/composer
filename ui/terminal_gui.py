@@ -26,7 +26,6 @@ def list_songs():
             f.write("INTRO\nCHORUS\nVERSE\nCHORUS\nVERSE\nOUTRO")
     songs = []
     for file in glob("songs/*.sng"):
-        logging.info("Found {}".format(file))
         songs.append(file)
     return songs
 

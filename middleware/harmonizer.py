@@ -4,7 +4,7 @@ from threading import Thread, Event
 from sortedcontainers import SortedSet
 
 ### Mido ###
-from mido import open_input, open_output, get_input_names, get_output_names # pylint: disable-msg=no-name-in-module
+from mido import open_input, open_output, get_input_names, get_output_names  # pylint: disable-msg=no-name-in-module
 
 ### Local ###
 from .midi_meta import MidiState, major_notes
@@ -16,13 +16,14 @@ class MidiHarmonizer(Thread):
     Applies a harmonization algorithm to MIDI messages on specific channels.
     """
 
-    def __init__(self, port_in_name, port_out_name, melody_channel=1, chord_channel=2, callback=None):
+    def __init__(self, port_in_name, port_out_name, melody_channel=1, bass_channel=2, chord_channel=3, callback=None):
         super(MidiHarmonizer, self).__init__()
         self.port_in_name = port_in_name
         self.port_in = None
         self.port_out_name = port_out_name
         self.port_out = None
         self.melody_channel = melody_channel
+        self.bass_channel = bass_channel
         self.chord_channel = chord_channel
         self.callback = callback
         self.midi_state = MidiState()
@@ -119,12 +120,12 @@ class MidiHarmonizer(Thread):
         new_msg = msg.copy()
 
         # Modify only note messages on the melody channel
-        if msg.type and (msg.type == "note_on" or msg.type == "note_off") and msg.channel == self.melody_channel:
+        if msg.type and msg.type in ["note_on", "note_off"] and msg.channel in [self.melody_channel, self.bass_channel]:
             new_msg.note = self.fit_note(msg.note)
-            # msg.note = self.fit_note(msg.note)
 
-        if new_msg.channel == 9:
-            new_msg.note -= 24
+        # Shift bass notes to correct pitch
+        if new_msg.channel == 2:
+            new_msg.note -= 12
 
         # Relay all messages
         if self.callback:
