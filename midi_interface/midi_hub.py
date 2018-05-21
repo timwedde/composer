@@ -49,12 +49,12 @@ class MidiHubException(Exception):
     pass
 
 
-class TextureType(object):
+class TextureType():
     MONOPHONIC = 1
     POLYPHONIC = 2
 
 
-class MidiSignal(object):
+class MidiSignal():
     _NOTE_ARGS = set(['type', 'note', 'program_number', 'velocity'])
     _CONTROL_ARGS = set(['type', 'control', 'value'])
     _VALID_ARGS = {
@@ -579,7 +579,7 @@ class PolyphonicMidiCaptor(MidiCaptor):
             self._open_notes[new_note.pitch] = new_note
 
 
-class MidiHub(object):
+class MidiHub():
 
     def __init__(self, input_midi_ports, output_midi_ports, texture_type, passthrough=True, playback_offset=0.0):
         self._texture_type = texture_type

@@ -10,7 +10,7 @@ from magenta.models.pianoroll_rnn_nade import pianoroll_rnn_nade_sequence_genera
 from magenta.music.sequence_generator_bundle import read_bundle_file, GeneratorBundleParseException
 
 ### Local ###
-from settings import * # pylint: disable-msg=wildcard-import
+from settings import *  # pylint: disable-msg=wildcard-import
 from .song import Song, SongPart
 from middleware.virtual_keyboard import Keyboard
 from middleware import MidiHarmonizer, MidiRecorder
@@ -31,7 +31,7 @@ def load_generator_from_bundle_file(bundle_file):
         logging.warning("Failed to parse '{}'".format(bundle_file))
         return None
 
-    generator_id = bundle.generator_details.id # pylint: disable-msg=no-member
+    generator_id = bundle.generator_details.id  # pylint: disable-msg=no-member
     if generator_id not in GENERATOR_MAP:
         logging.warning("Unrecognized SequenceGenerator ID '{}' in '{}'".format(
             generator_id, bundle_file))
@@ -40,7 +40,7 @@ def load_generator_from_bundle_file(bundle_file):
     generator = GENERATOR_MAP[generator_id](checkpoint=None, bundle=bundle)
     generator.initialize()
     logging.info("Loaded '{}' generator bundle from file '{}'".format(
-        bundle.generator_details.id, bundle_file)) # pylint: disable-msg=no-member
+        bundle.generator_details.id, bundle_file))  # pylint: disable-msg=no-member
     return generator
 
 
@@ -145,8 +145,7 @@ class ComposerManager():
 
     def start_harmonizer(self):
         if not self.harmonizer:
-            self.harmonizer = MidiHarmonizer(
-                HARMONIZER_INPUT_NAME, HARMONIZER_OUTPUT_NAME, callback=self.note_callback)
+            self.harmonizer = MidiHarmonizer(HARMONIZER_INPUT_NAME, HARMONIZER_OUTPUT_NAME, callback=self.note_callback)
         if self.harmonizer and not self.harmonizer.stopped() and not self.harmonizer.is_alive():
             logging.info("Started MIDI harmonizer")
             self.harmonizer.start()
