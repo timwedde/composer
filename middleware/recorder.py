@@ -6,7 +6,7 @@ from decimal import Decimal, ROUND_DOWN, localcontext
 ### Mido ###
 from mido.midifiles.tracks import _to_reltime
 from mido.midifiles.units import second2tick, bpm2tempo
-from mido import open_input, open_output, get_input_names, get_output_names, MidiFile, MidiTrack # pylint: disable-msg=no-name-in-module, line-too-long
+from mido import open_input, open_output, get_input_names, get_output_names, MidiFile, MidiTrack, Message # pylint: disable-msg=no-name-in-module, line-too-long
 
 
 class MidiRecorder(Thread):
@@ -51,6 +51,10 @@ class MidiRecorder(Thread):
             self.port_out = open_output(self.port_out_name, virtual=False)
         else:
             self.port_out = open_output(self.port_out_name, virtual=True)
+
+        # self.port_out.send(Message(type="program_change", program=1, channel=1))
+        # self.port_out.send(Message(type="program_change", program=34, channel=2))
+        # self.port_out.send(Message(type="program_change", program=57, channel=3))
 
         # Set the callback and go live
         self.port_in.callback = self.handle_message

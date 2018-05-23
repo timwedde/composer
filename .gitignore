@@ -1,3 +1,6 @@
+# Logic X Projects
+*.logicx
+
 # MIDI files
 *.mid
 

@@ -50,10 +50,6 @@ class MidiHarmonizer(Thread):
         else:
             self.port_out = open_output(self.port_out_name, virtual=True)
 
-        # self.port_out.send(Message(type='program_change', program=57, channel=self.melody_channel))
-        # self.port_out.send(Message(type='program_change', program=35, channel=self.melody_channel))
-        # self.port_out.send(Message(type='program_change', program=35, channel=self.chord_channel))
-
         # Set the callback and go live
         self.port_in.callback = self.handle_message
 
@@ -72,11 +68,15 @@ class MidiHarmonizer(Thread):
         # with generated output, as we don't have to transpose the black keys.
         # TODO: do not recompute if same chord as before (cache valid notes)
         if chord:
-            # for bass, transpose up to melody register, then transpose final note down again
-            note = note + 36
-
             middle_octave_chords = 4
             middle_octave_melody = 8
+
+            # If the input note is too low, transpose it upwards
+            # to apply the harmonisation, then transpose it back down.
+            transposed_octave = 0
+            while note < (middle_octave_melody * 12):
+                note += 12
+                transposed_octave += 1
 
             # Root C note of all octaves
             octaves = list(range(0, 127, 12))
@@ -98,6 +98,7 @@ class MidiHarmonizer(Thread):
             # get relative distance from played key to middle C of melody
             diff = note - octaves[middle_octave_melody]
 
+            note -= transposed_octave * 12
             # clamp to valid note range
             diff = max(-len(f_a), min(diff, len(f_b) - 1))
 
@@ -107,7 +108,6 @@ class MidiHarmonizer(Thread):
             else:
                 note = f_b[diff]
 
-            # note = note - 36 # for bass
             # clamp note to valid MIDI note range
             note = max(0, min(note, 127))
 
