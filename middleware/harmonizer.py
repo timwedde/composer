@@ -124,7 +124,7 @@ class MidiHarmonizer(Thread):
             new_msg.note = self.fit_note(msg.note)
 
         # Shift bass notes to correct pitch
-        if new_msg.channel == 2:
+        if msg.type in ["note_on", "note_off"] and new_msg.channel == 2:
             new_msg.note -= 12
 
         # Relay all messages
