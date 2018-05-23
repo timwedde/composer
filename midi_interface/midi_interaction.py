@@ -31,7 +31,7 @@ from magenta.protobuf.generator_pb2 import GeneratorOptions
 from settings import HARMONIZER_INPUT_NAME
 from midi_interface import MidiHub, TextureType
 
-Note = namedtuple('Note', ['pitch', 'velocity', 'start', 'end'])
+Note = namedtuple("Note", ["pitch", "velocity", "start", "end"])
 
 
 def adjust_sequence_times(sequence, delta_time):
@@ -63,17 +63,12 @@ class CacheItem():
 
 
 class MidiInteraction(Thread, metaclass=ABCMeta):
-    # _metaclass__ = ABCMeta
 
     _BASE_QPM = 60  # Base QPM when set by a tempo control change.
 
-    def __init__(self,
-                 midi_hub,
-                 sequence_generators,
-                 qpm,
-                 generator_select_control_number=None,
-                 tempo_control_number=None,
-                 temperature_control_number=None):
+    def __init__(self, midi_hub, sequence_generators,
+                 qpm, generator_select_control_number=None,
+                 tempo_control_number=None, temperature_control_number=None):
         self._midi_hub = midi_hub
         self._sequence_generators = sequence_generators
         self._default_qpm = qpm
@@ -102,7 +97,7 @@ class MidiInteraction(Thread, metaclass=ABCMeta):
         val = self._midi_hub.control_value(self._temperature_control_number)
         if val is None:
             return default
-        return min_temp + (val / 127.) * (max_temp - min_temp)
+        return min_temp + (val / 127.0) * (max_temp - min_temp)
 
     @abstractmethod
     def run(self):
@@ -122,34 +117,19 @@ class SongStructureMidiInteraction(MidiInteraction):
     BASS_CACHE = {}
     DRUM_CACHE = {}
 
-    def __init__(self,
-                 sequence_generators,
-                 qpm,
-                 structure,
-                 chord_passthrough=False,
-                 generator_select_control_number=None,
-                 clock_signal=None,
-                 tick_duration=None,
-                 end_call_signal=None,
-                 panic_signal=None,
-                 mutate_signal=None,
-                 allow_overlap=False,
-                 metronome_channel=None,
-                 min_listen_ticks_control_number=None,
-                 max_listen_ticks_control_number=None,
-                 response_ticks_control_number=None,
-                 tempo_control_number=None,
-                 temperature_control_number=None,
-                 loop_control_number=None,
-                 state_control_number=None):
-        midi_hub = MidiHub(
-            None, [HARMONIZER_INPUT_NAME], TextureType.POLYPHONIC)
-        super(SongStructureMidiInteraction, self).__init__(
-            midi_hub, sequence_generators, qpm, generator_select_control_number,
-            tempo_control_number, temperature_control_number)
+    def __init__(self, sequence_generators, qpm, structure, chord_passthrough=False,
+                 generator_select_control_number=None, clock_signal=None, tick_duration=None,
+                 end_call_signal=None, panic_signal=None, mutate_signal=None, allow_overlap=False,
+                 metronome_channel=None, min_listen_ticks_control_number=None,
+                 max_listen_ticks_control_number=None, response_ticks_control_number=None,
+                 tempo_control_number=None, temperature_control_number=None,
+                 loop_control_number=None, state_control_number=None):
+        midi_hub = MidiHub(None, [HARMONIZER_INPUT_NAME], TextureType.POLYPHONIC)
+        super(SongStructureMidiInteraction, self).__init__(midi_hub, sequence_generators, qpm,
+                                                           generator_select_control_number, tempo_control_number,
+                                                           temperature_control_number)
         if [clock_signal, tick_duration].count(None) != 1:
-            raise ValueError(
-                'Exactly one of `clock_signal` or `tick_duration` must be specified.')
+            raise ValueError("Exactly one of 'clock_signal' or 'tick_duration' must be specified.")
         self.STRUCTURE = structure
         self.MELODY_CACHE = {part.name: None for part in self.STRUCTURE}
         self.BASS_CACHE = {part.name: None for part in self.STRUCTURE}
@@ -177,33 +157,30 @@ class SongStructureMidiInteraction(MidiInteraction):
 
     def _update_state(self, state):
         if self._state_control_number is not None:
-            self._midi_hub.send_control_change(
-                self._state_control_number, state)
-        logging.info('State: %s', state)
+            self._midi_hub.send_control_change(self._state_control_number, state)
+        logging.info("State: {}".format(state))
 
     def _end_call_callback(self, unused_captured_seq):
         self._end_call.set()
-        logging.info('End call signal received.')
+        logging.info("End call signal received.")
 
     def _panic_callback(self, unused_captured_seq):
         self._panic.set()
-        logging.info('Panic signal received.')
+        logging.info("Panic signal received.")
 
     def _mutate_callback(self, unused_captured_seq):
         self._mutate.set()
-        logging.info('Mutate signal received.')
+        logging.info("Mutate signal received.")
 
     @property
     def _min_listen_ticks(self):
-        val = self._midi_hub.control_value(
-            self._min_listen_ticks_control_number)
+        val = self._midi_hub.control_value(self._min_listen_ticks_control_number)
         return 0 if val is None else val
 
     @property
     def _max_listen_ticks(self):
-        val = self._midi_hub.control_value(
-            self._max_listen_ticks_control_number)
-        return float('inf') if not val else val
+        val = self._midi_hub.control_value(self._max_listen_ticks_control_number)
+        return float("inf") if not val else val
 
     @property
     def _should_loop(self):
@@ -221,27 +198,20 @@ class SongStructureMidiInteraction(MidiInteraction):
         response_end_time -= zero_time
 
         generator_options = GeneratorOptions()
-        generator_options.input_sections.add(
-            start_time=0,
-            end_time=response_start_time)
-        generator_options.generate_sections.add(
-            start_time=response_start_time,
-            end_time=response_end_time)
+        generator_options.input_sections.add(start_time=0, end_time=response_start_time)
+        generator_options.generate_sections.add(start_time=response_start_time, end_time=response_end_time)
 
         # Set current temperature setting.
-        generator_options.args['temperature'].float_value = self._temperature
+        generator_options.args["temperature"].float_value = self._temperature
 
         # Generate response.
         generator = self._sequence_generators[gen_index]
-        logging.warn("Generating sequence using '%s' generator.",
-                     generator.details.id)
-        # logging.warn('Generator Details: %s', generator.details)
-        # logging.warn('Bundle Details: %s', generator.bundle_details)
-        # logging.warn('Generator Options: %s', generator_options)
-        response_sequence = generator.generate(adjust_sequence_times(
-            input_sequence, -zero_time), generator_options)
-        response_sequence = trim_note_sequence(
-            response_sequence, response_start_time, response_end_time)
+        logging.warn("Generating sequence using '{}' generator.".format(generator.details.id))
+        # logging.warn("\tGenerator Details:\t{}".format(generator.details))
+        # logging.warn("\tBundle Details:\t{}".format(generator.bundle_details))
+        # logging.warn("\tGenerator Options:\t{}".format(generator_options))
+        response_sequence = generator.generate(adjust_sequence_times(input_sequence, -zero_time), generator_options)
+        response_sequence = trim_note_sequence(response_sequence, response_start_time, response_end_time)
         return adjust_sequence_times(response_sequence, zero_time)
 
     def run(self):
@@ -249,19 +219,15 @@ class SongStructureMidiInteraction(MidiInteraction):
         self._captor = self._midi_hub.start_capture(self._qpm, start_time)
 
         if not self._clock_signal and self._metronome_channel is not None:
-            self._midi_hub.start_metronome(
-                self._qpm, start_time, channel=self._metronome_channel)
+            self._midi_hub.start_metronome(self._qpm, start_time, channel=self._metronome_channel)
 
         # Register callbacks
         if self._end_call_signal is not None:
-            self._captor.register_callback(
-                self._end_call_callback, signal=self._end_call_signal)
+            self._captor.register_callback(self._end_call_callback, signal=self._end_call_signal)
         if self._panic_signal is not None:
-            self._captor.register_callback(
-                self._panic_callback, signal=self._panic_signal)
+            self._captor.register_callback(self._panic_callback, signal=self._panic_signal)
         if self._mutate_signal is not None:
-            self._captor.register_callback(
-                self._mutate_callback, signal=self._mutate_signal)
+            self._captor.register_callback(self._mutate_callback, signal=self._mutate_signal)
 
         # Keep track of the end of the previous tick time.
         last_tick_time = time()
@@ -273,14 +239,10 @@ class SongStructureMidiInteraction(MidiInteraction):
         response_sequence = NoteSequence()
         response_start_time = 0
         response_duration = 0
-        player_melody = self._midi_hub.start_playback(
-            response_sequence, playback_channel=1, allow_updates=True)
-        player_bass = self._midi_hub.start_playback(
-            response_sequence, playback_channel=2, allow_updates=True)
-        player_chords = self._midi_hub.start_playback(
-            response_sequence, playback_channel=3, allow_updates=True)
-        player_drums = self._midi_hub.start_playback(
-            response_sequence, playback_channel=9, allow_updates=True)
+        player_melody = self._midi_hub.start_playback(response_sequence, playback_channel=1, allow_updates=True)
+        player_bass = self._midi_hub.start_playback(response_sequence, playback_channel=2, allow_updates=True)
+        player_chords = self._midi_hub.start_playback(response_sequence, playback_channel=3, allow_updates=True)
+        player_drums = self._midi_hub.start_playback(response_sequence, playback_channel=9, allow_updates=True)
 
         # Song structure data
         part_in_song = 0  # index to STRUCTURE list
@@ -303,13 +265,11 @@ class SongStructureMidiInteraction(MidiInteraction):
 
             # Set to current QPM, since it might have changed.
             if not self._clock_signal and self._metronome_channel is not None:
-                self._midi_hub.start_metronome(
-                    self._qpm, tick_time, channel=self._metronome_channel)
+                self._midi_hub.start_metronome(self._qpm, tick_time, channel=self._metronome_channel)
             captured_sequence.tempos[0].qpm = self._qpm
 
             tick_duration = tick_time - last_tick_time
-            last_end_time = (max(
-                note.end_time for note in captured_sequence.notes) if captured_sequence.notes else 0.0)
+            last_end_time = max(note.end_time for note in captured_sequence.notes) if captured_sequence.notes else 0.0
 
             # True if there was no input captured during the last tick.
             silent_tick = last_end_time <= last_tick_time
@@ -338,55 +298,35 @@ class SongStructureMidiInteraction(MidiInteraction):
                     response_start_time = self.MELODY_CACHE[
                         part.name].response_start_time
                 else:
-                    logging.info("new melody sequence")
-                    melody_sequence = self._generate(
-                        0,
-                        captured_sequence,
-                        capture_start_time,
-                        response_start_time,
-                        response_start_time + response_duration)
-                    self.MELODY_CACHE[part.name] = CacheItem(
-                        melody_sequence, capture_start_time)
+                    logging.info("Generating new melody sequence")
+                    melody_sequence = self._generate(0, captured_sequence, capture_start_time,
+                                                     response_start_time, response_start_time + response_duration)
+                    self.MELODY_CACHE[part.name] = CacheItem(melody_sequence, capture_start_time)
 
                 if self.BASS_CACHE[part.name]:
                     bass_sequence = self.BASS_CACHE[part.name].sequence
-                    response_start_time = self.BASS_CACHE[
-                        part.name].response_start_time
+                    response_start_time = self.BASS_CACHE[part.name].response_start_time
                 else:
-                    logging.info("new bass sequence")
-                    bass_sequence = self._generate(
-                        1,
-                        captured_sequence,
-                        capture_start_time,
-                        response_start_time,
-                        response_start_time + response_duration)
-                    self.BASS_CACHE[part.name] = CacheItem(
-                        bass_sequence, capture_start_time)
+                    logging.info("Generating new bass sequence")
+                    bass_sequence = self._generate(1, captured_sequence, capture_start_time,
+                                                   response_start_time, response_start_time + response_duration)
+                    self.BASS_CACHE[part.name] = CacheItem(bass_sequence, capture_start_time)
 
                 if self.DRUM_CACHE[part.name]:
                     drum_sequence = self.DRUM_CACHE[part.name].sequence
-                    response_start_time = self.DRUM_CACHE[
-                        part.name].response_start_time
+                    response_start_time = self.DRUM_CACHE[part.name].response_start_time
                 else:
-                    logging.info("new drum sequence")
-                    drum_sequence = self._generate(
-                        2,
-                        captured_sequence,
-                        capture_start_time,
-                        response_start_time,
-                        response_start_time + response_duration)
-                    self.DRUM_CACHE[part.name] = CacheItem(
-                        drum_sequence, capture_start_time)
+                    logging.info("Generating new drum sequence")
+                    drum_sequence = self._generate(2, captured_sequence, capture_start_time,
+                                                   response_start_time, response_start_time + response_duration)
+                    self.DRUM_CACHE[part.name] = CacheItem(drum_sequence, capture_start_time)
 
-                size = getsizeof(self.MELODY_CACHE)
-                size += getsizeof(self.BASS_CACHE)
-                size += getsizeof(self.DRUM_CACHE)
-                logging.info(f"Cache Size: {size // 8}KB")
+                size = getsizeof(self.MELODY_CACHE) + getsizeof(self.BASS_CACHE) + getsizeof(self.DRUM_CACHE)
+                logging.info("Cache Size: {}KB".format(size // 8))
 
                 chord_sequence = NoteSequence()
                 notes = []
-                chords = part.get_midi_chords()
-                chords += chords
+                chords = part.get_midi_chords() * 2
                 for i, chord in enumerate(chords):
                     for note in generate_midi_chord(chord, 2 * i, 2):
                         notes.append(note)
@@ -396,39 +336,24 @@ class SongStructureMidiInteraction(MidiInteraction):
 
                 # If it took too long to generate, push response to next tick.
                 if (time() - response_start_time) >= tick_duration / 4:
-                    push_ticks = (
-                        (time() - response_start_time) // tick_duration + 1)
+                    push_ticks = ((time() - response_start_time) // tick_duration + 1)
                     response_start_time += push_ticks * tick_duration
-                    melody_sequence = adjust_sequence_times(
-                        melody_sequence, push_ticks * tick_duration)
-                    bass_sequence = adjust_sequence_times(
-                        bass_sequence, push_ticks * tick_duration)
-                    chord_sequence = adjust_sequence_times(
-                        chord_sequence, push_ticks * tick_duration)
-                    drum_sequence = adjust_sequence_times(
-                        drum_sequence, push_ticks * tick_duration)
-                    self.MELODY_CACHE[
-                        part.name].response_start_time = response_start_time
-                    self.BASS_CACHE[
-                        part.name].response_start_time = response_start_time
-                    self.DRUM_CACHE[
-                        part.name].response_start_time = response_start_time
-                    logging.warning('Response too late. Pushing back %d ticks.', push_ticks)
+                    melody_sequence = adjust_sequence_times(melody_sequence, push_ticks * tick_duration)
+                    bass_sequence = adjust_sequence_times(bass_sequence, push_ticks * tick_duration)
+                    chord_sequence = adjust_sequence_times(chord_sequence, push_ticks * tick_duration)
+                    drum_sequence = adjust_sequence_times(drum_sequence, push_ticks * tick_duration)
+                    self.MELODY_CACHE[part.name].response_start_time = response_start_time
+                    self.BASS_CACHE[part.name].response_start_time = response_start_time
+                    self.DRUM_CACHE[part.name].response_start_time = response_start_time
+                    logging.warning("Response too late. Pushing back {} ticks.".format(push_ticks))
 
                 # Start response playback. Specify the start_time to avoid
                 # stripping initial events due to generation lag.
-                # Before playback:
-                # - transpose melody and bass for MelodicFlow
-                # - map notes that lie on black keys to a white key to prevent triggering MelodicFlow
-                player_melody.update_sequence(
-                    melody_sequence, start_time=response_start_time)
-                player_bass.update_sequence(
-                    bass_sequence, start_time=response_start_time)
+                player_melody.update_sequence(melody_sequence, start_time=response_start_time)
+                player_bass.update_sequence(bass_sequence, start_time=response_start_time)
                 if self.chord_passthrough:
-                    player_chords.update_sequence(
-                        chord_sequence, start_time=response_start_time)
-                player_drums.update_sequence(
-                    drum_sequence, start_time=response_start_time)
+                    player_chords.update_sequence(chord_sequence, start_time=response_start_time)
+                player_drums.update_sequence(drum_sequence, start_time=response_start_time)
 
             if not captured_sequence.notes:
                 # Reset captured sequence since we are still idling.
