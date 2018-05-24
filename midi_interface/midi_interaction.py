@@ -117,7 +117,7 @@ class SongStructureMidiInteraction(MidiInteraction):
     BASS_CACHE = {}
     DRUM_CACHE = {}
 
-    def __init__(self, sequence_generators, qpm, structure, chord_passthrough=False,
+    def __init__(self, sequence_generators, qpm, structure,
                  generator_select_control_number=None, clock_signal=None, tick_duration=None,
                  end_call_signal=None, panic_signal=None, mutate_signal=None, allow_overlap=False,
                  metronome_channel=None, min_listen_ticks_control_number=None,
@@ -146,7 +146,6 @@ class SongStructureMidiInteraction(MidiInteraction):
         self._response_ticks_control_number = response_ticks_control_number
         self._loop_control_number = loop_control_number
         self._state_control_number = state_control_number
-        self.chord_passthrough = chord_passthrough
         self._captor = None
         # Event for signalling when to end a call.
         self._end_call = Event()
@@ -351,8 +350,7 @@ class SongStructureMidiInteraction(MidiInteraction):
                 # stripping initial events due to generation lag.
                 player_melody.update_sequence(melody_sequence, start_time=response_start_time)
                 player_bass.update_sequence(bass_sequence, start_time=response_start_time)
-                if self.chord_passthrough:
-                    player_chords.update_sequence(chord_sequence, start_time=response_start_time)
+                player_chords.update_sequence(chord_sequence, start_time=response_start_time)
                 player_drums.update_sequence(drum_sequence, start_time=response_start_time)
 
             if not captured_sequence.notes:

@@ -172,12 +172,6 @@ class TerminalGUI(urwid.WidgetWrap):
                 rb.set_state(True, do_callback=False)
                 break
 
-    def on_chord_passthrough_checkbox(self, w, state):
-        # pylint: disable-msg=unused-argument
-        logging.info("{} Chord Passthrough".format(
-            "Enabled" if state else "Disabled"))
-        self.composer.chord_passthrough(state)
-
     def on_unicode_checkbox(self, w, state):
         # pylint: disable-msg=unused-argument
         logging.info("{} Unicode Graphics".format(
@@ -204,9 +198,6 @@ class TerminalGUI(urwid.WidgetWrap):
         animate_controls = urwid.GridFlow(
             [self.start_button, make_button("Reset", self.on_reset_button)],
             9, 2, 0, "center")
-
-        chord_passthrough = urwid.CheckBox("Chord Passthrough", state=True,
-                                           on_state_change=self.on_chord_passthrough_checkbox)
 
         self.animate_progress_wrap = urwid.WidgetWrap(self.animate_progress)
 
@@ -247,7 +238,6 @@ class TerminalGUI(urwid.WidgetWrap):
              self.animate_progress_wrap,
              urwid.Divider(),
              urwid.LineBox(unicode_checkbox),
-             urwid.LineBox(chord_passthrough),
              urwid.Divider(),
              make_button("Quit", self.exit_program)]
         w = urwid.ListBox(urwid.SimpleListWalker(l))

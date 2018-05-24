@@ -72,10 +72,6 @@ class ComposerManager():
         self.keyboard_melody = Keyboard(channel=1, note_shift=-36)
         self.keyboard_bass = Keyboard(channel=2, note_shift=-12)
 
-    def chord_passthrough(self, state):
-        if self.interaction:
-            self.interaction.chord_passthrough = state
-
     def set_song(self, song):
         logging.info(f"Song set to '{song}'")
         self.selected_song = song
@@ -114,7 +110,7 @@ class ComposerManager():
     def start_interaction(self, song):
         if not self.interaction:
             self.interaction = SongStructureMidiInteraction(
-                self.generators, 120, tick_duration=4 * (60.0 / 120), structure=song, chord_passthrough=True)
+                self.generators, 120, tick_duration=4 * (60.0 / 120), structure=song)
         if self.interaction and not self.interaction.stopped() and not self.interaction.is_alive():
             logging.info("Started MIDI interaction")
             self.interaction.start()
