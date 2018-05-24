@@ -293,8 +293,7 @@ class MidiPlayer(threading.Thread):
             self.join()
 
 
-class MidiCaptor(threading.Thread):
-    _metaclass__ = abc.ABCMeta
+class MidiCaptor(threading.Thread, metaclass=abc.ABCMeta):
 
     # A message that is used to wake the consumer thread.
     _WAKE_MESSAGE = None

@@ -73,7 +73,7 @@ class MidiRecorder(Thread):
         # 3 digits is the most precise we can get
         with localcontext() as ctx:
             ctx.rounding = ROUND_DOWN
-            tm = float(Decimal(time()).quantize(Decimal('0.001')))
+            tm = float(Decimal(time()).quantize(Decimal("0.001")))
             if not self.first_time:
                 self.first_time = tm
                 tm = 0

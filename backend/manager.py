@@ -109,8 +109,8 @@ class ComposerManager():
 
     def start_interaction(self, song):
         if not self.interaction:
-            self.interaction = SongStructureMidiInteraction(
-                self.generators, 120, tick_duration=4 * (60.0 / 120), structure=song)
+            self.interaction = SongStructureMidiInteraction(self.generators, 120,
+                                                            tick_duration=4 * (60.0 / 120), structure=song)
         if self.interaction and not self.interaction.stopped() and not self.interaction.is_alive():
             logging.info("Started MIDI interaction")
             self.interaction.start()

@@ -86,8 +86,7 @@ class MidiHarmonizer(Thread):
             while lowest >= 0:
                 count += 1
                 lowest -= 12
-            mapped_over_range = [
-                [e - (12 * count) + octave for e in chord] for octave in octaves]
+            mapped_over_range = [[e - (12 * count) + octave for e in chord] for octave in octaves]
 
             # get valid notes, split for positive and negative movement
             f_a = SortedSet([e for l in mapped_over_range[:middle_octave_chords] for e in l])

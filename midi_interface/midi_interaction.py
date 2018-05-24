@@ -325,7 +325,7 @@ class SongStructureMidiInteraction(MidiInteraction):
 
                 chord_sequence = NoteSequence()
                 notes = []
-                chords = part.get_midi_chords() * 2
+                chords = part.get_midi_chords()
                 for i, chord in enumerate(chords):
                     for note in generate_midi_chord(chord, 2 * i, 2):
                         notes.append(note)
