@@ -294,8 +294,7 @@ class SongStructureMidiInteraction(MidiInteraction):
 
                 if self.MELODY_CACHE[part.name]:
                     melody_sequence = self.MELODY_CACHE[part.name].sequence
-                    response_start_time = self.MELODY_CACHE[
-                        part.name].response_start_time
+                    response_start_time = self.MELODY_CACHE[part.name].response_start_time
                 else:
                     logging.info("Generating new melody sequence")
                     melody_sequence = self._generate(0, captured_sequence, capture_start_time,

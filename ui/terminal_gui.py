@@ -1,4 +1,6 @@
-#!/usr/bin/env python3
+"""
+An ncurses-based terminal frontend.
+"""
 
 ### System ###
 import os
@@ -22,41 +24,39 @@ from settings import UPDATE_INTERVAL
 def list_songs():
     if not os.path.exists("songs"):
         os.mkdir("songs")
-        with open("songs/song_1.sng", "w") as f:
-            f.write("INTRO\nCHORUS\nVERSE\nCHORUS\nVERSE\nOUTRO")
+        with open("songs/song_1.sng", "w") as file:
+            file.write("INTRO\nCHORUS\nVERSE\nCHORUS\nVERSE\nOUTRO")
     songs = []
     for file in glob("songs/*.sng"):
         songs.append(file)
     return songs
 
 
-def window_shadow(w, shadow=False):
-    bg = urwid.AttrWrap(urwid.SolidFill(u"\u2592"), "screen edge")
+def window_shadow(window, shadow=False):
+    background = urwid.AttrWrap(urwid.SolidFill(u"\u2592"), "screen edge")
     if shadow:
         shadow = urwid.AttrWrap(urwid.SolidFill(u" "), "main shadow")
-        bg = urwid.Overlay(shadow, bg,
-                           ("fixed left", 3), ("fixed right", 1),
-                           ("fixed top", 2), ("fixed bottom", 1))
-        w = urwid.Overlay(w, bg,
-                          ("fixed left", 2), ("fixed right", 3),
-                          ("fixed top", 1), ("fixed bottom", 2))
+        background = urwid.Overlay(shadow, background,
+                                   ("fixed left", 3), ("fixed right", 1),
+                                   ("fixed top", 2), ("fixed bottom", 1))
+        window = urwid.Overlay(window, background,
+                               ("fixed left", 2), ("fixed right", 3),
+                               ("fixed top", 1), ("fixed bottom", 2))
     else:
-        w = urwid.Overlay(w, bg,
-                          ("fixed left", 1), ("fixed right", 1),
-                          ("fixed top", 1), ("fixed bottom", 1))
-    return w
+        window = urwid.Overlay(window, background,
+                               ("fixed left", 1), ("fixed right", 1),
+                               ("fixed top", 1), ("fixed bottom", 1))
+    return window
 
 
-def make_button(t, fn):
-    w = urwid.Button(t, fn)
-    w = urwid.AttrWrap(w, "button normal", "button select")
-    return w
+def make_button(title, callback):
+    button = urwid.Button(title, callback)
+    return urwid.AttrWrap(button, "button normal", "button select")
 
 
-def make_radio_button(g, l, fn):
-    w = urwid.RadioButton(g, l, False, on_state_change=fn)
-    w = urwid.AttrWrap(w, "button normal", "button select")
-    return w
+def make_radio_button(group, title, callback):
+    radio_button = urwid.RadioButton(group, title, False, on_state_change=callback)
+    return urwid.AttrWrap(radio_button, "button normal", "button select")
 
 
 def make_progress_bar(smooth=False):
@@ -136,7 +136,7 @@ class TerminalGUI(urwid.WidgetWrap):
             self.current_song_duration = self.composer.start()
             self.current_song_started = time()
 
-    def on_reset_button(self, w):
+    def on_reset_button(self, window):
         # pylint: disable-msg=unused-argument
         self.started = True
         self.on_start_button(self.start_button)
@@ -147,9 +147,9 @@ class TerminalGUI(urwid.WidgetWrap):
             self.composer.set_input_port(button.get_label())
 
     def on_input_port_change(self, port):
-        for b in self.input_port_buttons:
-            if b.get_label() == port:
-                b.set_state(True, do_callback=False)
+        for button in self.input_port_buttons:
+            if button.get_label() == port:
+                button.set_state(True, do_callback=False)
                 break
 
     def on_output_port_button(self, button, state):
@@ -157,9 +157,9 @@ class TerminalGUI(urwid.WidgetWrap):
             self.composer.set_output_port(button.get_label())
 
     def on_output_port_change(self, port):
-        for b in self.output_port_buttons:
-            if b.get_label() == port:
-                b.set_state(True, do_callback=False)
+        for button in self.output_port_buttons:
+            if button.get_label() == port:
+                button.set_state(True, do_callback=False)
                 break
 
     def on_song_button(self, button, state):
@@ -167,15 +167,14 @@ class TerminalGUI(urwid.WidgetWrap):
             self.composer.set_song(button.get_label())
 
     def on_song_change(self, song):
-        for rb in self.song_buttons:
-            if rb.get_label() == song:
-                rb.set_state(True, do_callback=False)
+        for radio_button in self.song_buttons:
+            if radio_button.get_label() == song:
+                radio_button.set_state(True, do_callback=False)
                 break
 
-    def on_unicode_checkbox(self, w, state):
+    def on_unicode_checkbox(self, window, state):
         # pylint: disable-msg=unused-argument
-        logging.info("{} Unicode Graphics".format(
-            "Enabled" if state else "Disabled"))
+        logging.info("{} Unicode Graphics".format("Enabled" if state else "Disabled"))
         self.animate_progress = make_progress_bar(state)
         self.animate_progress_wrap._w = self.animate_progress  # pylint: disable-msg=protected-access
         self.update_screen()
@@ -185,8 +184,8 @@ class TerminalGUI(urwid.WidgetWrap):
         self.song_buttons = []
         group = []
         for song in songs:
-            rb = make_radio_button(group, song, self.on_song_button)
-            self.song_buttons.append(rb)
+            radio_button = make_radio_button(group, song, self.on_song_button)
+            self.song_buttons.append(radio_button)
 
         # setup animate button
         self.start_button = make_button("Start", self.on_start_button)
@@ -195,9 +194,8 @@ class TerminalGUI(urwid.WidgetWrap):
         self.composer.stop()
 
         self.animate_progress = make_progress_bar()
-        animate_controls = urwid.GridFlow(
-            [self.start_button, make_button("Reset", self.on_reset_button)],
-            9, 2, 0, "center")
+        animate_controls = urwid.GridFlow([self.start_button, make_button("Reset", self.on_reset_button)],
+                                          9, 2, 0, "center")
 
         self.animate_progress_wrap = urwid.WidgetWrap(self.animate_progress)
 
@@ -211,14 +209,14 @@ class TerminalGUI(urwid.WidgetWrap):
         self.input_port_buttons = []
         group = []
         for port in get_input_names():
-            b = make_radio_button(group, port, self.on_input_port_button)
-            self.input_port_buttons.append(b)
+            radio_button = make_radio_button(group, port, self.on_input_port_button)
+            self.input_port_buttons.append(radio_button)
 
         self.output_port_buttons = []
         group = []
         for port in get_output_names():
-            b = make_radio_button(group, port, self.on_output_port_button)
-            self.output_port_buttons.append(b)
+            radio_button = make_radio_button(group, port, self.on_output_port_button)
+            self.output_port_buttons.append(radio_button)
 
         ipb = [urwid.Text("No MIDI Input Ports available", align="center")]
         if self.input_port_buttons:
@@ -228,7 +226,7 @@ class TerminalGUI(urwid.WidgetWrap):
         if self.output_port_buttons:
             opb = [urwid.Text("MIDI Output Port", align="center")] + self.output_port_buttons
 
-        l = [urwid.Text("Song", align="center")] + \
+        components = [urwid.Text("Song", align="center")] + \
             self.song_buttons + \
             ([urwid.Divider()] + ipb if ipb else []) + \
             ([urwid.Divider()] + opb if opb else []) + \
@@ -240,8 +238,7 @@ class TerminalGUI(urwid.WidgetWrap):
              urwid.LineBox(unicode_checkbox),
              urwid.Divider(),
              make_button("Quit", self.exit_program)]
-        w = urwid.ListBox(urwid.SimpleListWalker(l))
-        return w
+        return urwid.ListBox(urwid.SimpleListWalker(components))
 
     def main_window(self):
         vline = urwid.AttrMap(urwid.SolidFill("|"), "line")
@@ -314,7 +311,7 @@ class TerminalGUI(urwid.WidgetWrap):
             self.loop.remove_alarm(self.animate_alarm)
         self.animate_alarm = None
 
-    def exit_program(self, w=None):
+    def exit_program(self, window=None):
         # pylint: disable-msg=unused-argument
         self.composer.stop()
         raise urwid.ExitMainLoop()
