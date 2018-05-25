@@ -246,7 +246,7 @@ class SongStructureMidiInteraction(MidiInteraction):
         # Song structure data
         part_in_song = 0  # index to STRUCTURE list
         bars_played = 0  # absolute number of bars played
-        part_duration = 8
+        part_duration = 4
 
         # Enter loop at each clock tick.
         for captured_sequence in self._captor.iterate(signal=self._clock_signal, period=self._tick_duration):

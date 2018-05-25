@@ -302,8 +302,7 @@ class TerminalGUI(urwid.WidgetWrap):
     def refresh(self, loop=None, user_data=None):
         # pylint: disable-msg=unused-argument
         self.update_screen()
-        self.animate_alarm = self.loop.set_alarm_in(
-            UPDATE_INTERVAL, self.refresh)
+        self.animate_alarm = self.loop.set_alarm_in(UPDATE_INTERVAL, self.refresh)
 
     def stop_refresh(self):
         logging.info("Stopped")
