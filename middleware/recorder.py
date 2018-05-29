@@ -52,9 +52,9 @@ class MidiRecorder(Thread):
         else:
             self.port_out = open_output(self.port_out_name, virtual=True)
 
-        # self.port_out.send(Message(type="program_change", program=1, channel=1))
-        # self.port_out.send(Message(type="program_change", program=34, channel=2))
-        # self.port_out.send(Message(type="program_change", program=57, channel=3))
+        self.port_out.send(Message(type="program_change", program=57, channel=1))
+        self.port_out.send(Message(type="program_change", program=68, channel=2))
+        self.port_out.send(Message(type="program_change", program=1, channel=3))
 
         # Set the callback and go live
         self.port_in.callback = self.handle_message
