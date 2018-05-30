@@ -1,6 +1,6 @@
-INTRO, I, I, V, IV
-CHORUS, I, V, IV, V
-VERSE, I, IV, V, IV
-CHORUS
+INTRO, I, vi, IV, V
+VERSE, I, ii, IV, V
+CHORUS, I, V, vi, IV
 VERSE
+CHORUS
 OUTRO, V, V, IV, I
