@@ -16,9 +16,13 @@ from mido import get_input_names, get_output_names  # pylint: disable-msg=no-nam
 
 ### Local ###
 from backend import ComposerManager
+from backend.song import load_song
 
 ### Globals ###
 from settings import UPDATE_INTERVAL
+
+
+SONG_MAP = {}
 
 
 def list_songs():
@@ -28,8 +32,14 @@ def list_songs():
             file.write("INTRO\nCHORUS\nVERSE\nCHORUS\nVERSE\nOUTRO")
     songs = []
     for file in glob("songs/*.sng"):
-        songs.append(file)
+        songs.append((load_song(file), os.path.basename(file)))
     return songs
+
+
+def song_to_title(song):
+    song, filename = song
+    title = "{}{}".format(song.name if song.name else filename, " by {}".format(song.author) if song.author else "")
+    return title
 
 
 def window_shadow(window, shadow=False):
@@ -119,6 +129,8 @@ class TerminalGUI(urwid.WidgetWrap):
         self.output_port_buttons = []
         self.composer = ComposerManager()
         self.composer.load_models()
+        for song in list_songs():
+            SONG_MAP[song_to_title(song)] = song[0]
         urwid.WidgetWrap.__init__(self, self.main_window())
         self.reset()  # initialize the view after the window is rendered
 
@@ -164,11 +176,11 @@ class TerminalGUI(urwid.WidgetWrap):
 
     def on_song_button(self, button, state):
         if state:
-            self.composer.set_song(button.get_label())
+            self.composer.set_song(SONG_MAP[button.get_label()])
 
     def on_song_change(self, song):
         for radio_button in self.song_buttons:
-            if radio_button.get_label() == song:
+            if radio_button.get_label() == song_to_title(song):
                 radio_button.set_state(True, do_callback=False)
                 break
 
@@ -184,7 +196,8 @@ class TerminalGUI(urwid.WidgetWrap):
         self.song_buttons = []
         group = []
         for song in songs:
-            radio_button = make_radio_button(group, song, self.on_song_button)
+            title = song_to_title(song)
+            radio_button = make_radio_button(group, title if title else filename, self.on_song_button)
             self.song_buttons.append(radio_button)
 
         # setup animate button

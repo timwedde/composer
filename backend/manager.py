@@ -15,7 +15,7 @@ from magenta.music.sequence_generator_bundle import read_bundle_file, GeneratorB
 
 ### Local ###
 from settings import *  # pylint: disable-msg=wildcard-import, unused-wildcard-import
-from .song import Song, SongPart
+from .song import Song, SongPart, load_song
 from middleware.virtual_keyboard import Keyboard
 from middleware import MidiHarmonizer, MidiRecorder
 from midi_interface import SongStructureMidiInteraction
@@ -46,22 +46,6 @@ def load_generator_from_bundle_file(bundle_file):
     logging.info("Loaded '{}' generator bundle from file '{}'".format(
         bundle.generator_details.id, bundle_file))  # pylint: disable-msg=no-member
     return generator
-
-
-def load_song(path):
-    """Loads a .sng file as a Song() object"""
-    structure = Song()
-    chords_per_part = {}
-    with open(path, "r") as file:
-        for line in file:
-            parts = [l.strip() for l in line.split(",")]
-            song_part = SongPart(parts[0], parts[1:])
-            if chords_per_part.get(song_part.name, False) and not song_part:
-                song_part = chords_per_part[song_part.name]
-            structure.append(song_part)
-            chords_per_part[song_part.name] = song_part
-    logging.info("Loaded '{}' with structure: {}".format(file, structure))
-    return structure
 
 
 class ComposerManager():
@@ -104,11 +88,10 @@ class ComposerManager():
 
     def start(self):
         """Sets up the signal chain and starts the generation process."""
-        song = load_song(self.selected_song)
         self.start_harmonizer()
         self.start_recorder()
-        self.start_interaction(song)
-        return song.duration()
+        self.start_interaction(self.selected_song)
+        return self.selected_song.duration()
 
     def stop(self):
         """Stops the signal chain and thus the generation process."""
