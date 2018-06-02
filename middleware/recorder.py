@@ -86,7 +86,7 @@ class MidiRecorder(Thread):
                 self.tracks[0].append(msg)
             else:
                 self.tracks[msg.channel].append(msg)
-        except IndexError:
+        except (IndexError, AttributeError):
             pass
 
         if self.callback:
