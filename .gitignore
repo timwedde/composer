@@ -3,6 +3,7 @@
 
 # MIDI files
 *.mid
+!results/*.mid
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

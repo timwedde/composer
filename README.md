@@ -6,7 +6,7 @@
 
 ## Download
 * [Master Version](https://github.com/timwedde/composer/archive/master.zip)
-* [Latest Release](https://github.com/timwedde/composer/archive/0.4.2.zip) (0.4.2)
+* [Latest Release](https://github.com/timwedde/composer/archive/0.4.3.zip) (0.4.3)
 
 ## Installation
 composer can be installed by cloning the repository:
@@ -50,4 +50,4 @@ $ python main.py
 * see [LICENSE](https://github.com/timwedde/composer/blob/master/LICENSE) file
 
 ## Version
-* Version 0.4.2
+* Version 0.4.3
