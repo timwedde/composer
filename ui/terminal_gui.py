@@ -292,7 +292,7 @@ class TerminalGUI(urwid.WidgetWrap):
 
         songs = list_songs()
         if songs:
-            self.composer.set_song(songs[0])
+            self.composer.set_song(songs[0][0])
             self.on_song_change(songs[0])
 
         in_port = get_input_names()
