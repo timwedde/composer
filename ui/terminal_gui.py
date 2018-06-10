@@ -244,7 +244,7 @@ class TerminalGUI(urwid.WidgetWrap):
             ([urwid.Divider()] + ipb if ipb else []) + \
             ([urwid.Divider()] + opb if opb else []) + \
             [urwid.Divider(),
-             urwid.Text("Animation", align="center"),
+             urwid.Text("Generation", align="center"),
              animate_controls,
              self.animate_progress_wrap,
              urwid.Divider(),
