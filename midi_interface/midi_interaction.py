@@ -246,7 +246,7 @@ class SongStructureMidiInteraction(MidiInteraction):
         # Song structure data
         part_in_song = 0  # index to STRUCTURE list
         bars_played = 0  # absolute number of bars played
-        part_duration = 4
+        part_duration = self.STRUCTURE[part_in_song].duration(bars=True)
 
         # Enter loop at each clock tick.
         for captured_sequence in self._captor.iterate(signal=self._clock_signal, period=self._tick_duration):
@@ -280,6 +280,7 @@ class SongStructureMidiInteraction(MidiInteraction):
             bar_in_part = bars_played % part_duration
             if part_in_song >= len(self.STRUCTURE):
                 break
+            part_duration = self.STRUCTURE[part_in_song].duration(bars=True)
 
             response_duration = part_duration * tick_duration
             response_start_time = tick_time
@@ -291,6 +292,7 @@ class SongStructureMidiInteraction(MidiInteraction):
 
             if bars_played % part_duration == 0:
                 part = self.STRUCTURE[part_in_song]
+                logging.info("Starting part '{}'".format(part.name))
 
                 if self.MELODY_CACHE[part.name]:
                     melody_sequence = self.MELODY_CACHE[part.name].sequence
@@ -326,7 +328,7 @@ class SongStructureMidiInteraction(MidiInteraction):
                 notes = []
                 chords = part.get_midi_chords()
                 for i, chord in enumerate(chords):
-                    for note in generate_midi_chord(chord, 2 * i, 2):
+                    for note in generate_midi_chord(chord, i / 2, 0.5):
                         notes.append(note)
                 notes = [Note(note.pitch, note.velocity, note.start + response_start_time,
                               note.start + note.end + response_start_time) for note in notes]

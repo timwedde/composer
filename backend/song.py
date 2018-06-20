@@ -5,6 +5,8 @@ Classes representing a song on a high level.
 ### System ###
 import os
 import logging
+from math import ceil
+from itertools import chain
 
 ### Local ###
 from mingus.containers import NoteContainer
@@ -16,17 +18,27 @@ def load_song(path):
     structure = Song()
     chords_per_part = {}
     with open(path, "r") as file:
+        main_key = "C"
         for i, line in enumerate(file):
             if i == 0:
                 data = line.split(",")
-                if 0 < len(data) < 3:
+                if 0 < len(data) < 4:
                     structure.name = data[0].strip()
-                    if len(data) == 2:
+                    if len(data) > 1:
                         structure.author = data[1].strip()
+                    if len(data) > 2:
+                        main_key = data[2].strip()
                 continue
             parts = [l.strip() for l in line.split(",")]
-            chords = [tuple(part.split(":")) for part in parts[1:]]
-            chords = [(*chord, "C") if len(chord) == 1 else chord for chord in chords]
+            split_data = [tuple(part.split(":")) for part in parts[1:]]
+            chords = []
+            for chord in split_data:
+                numeral, key, quarters = chord[0], main_key, 4
+                if len(chord) > 1:
+                    key = chord[1]
+                if "/" in numeral:
+                    numeral, quarters = numeral.split("/")
+                chords.append((numeral, key, int(quarters)))
             song_part = SongPart(parts[0], chords)
             if chords_per_part.get(song_part.name, False) and not song_part:
                 song_part = chords_per_part[song_part.name]
@@ -45,21 +57,23 @@ class SongPart(list):
         super(SongPart, self).__init__(chords)
         self.name = name
 
-    def duration(self, bars=False):
+    def duration(self, bars=False, bpm=120):
         """
         Returns the duration in seconds that this part will take.
         If 'bars' is True, returns the length in bars instead.
         """
         beats_per_bar = 4
-        bpm = 120
+        _bars = ceil(sum(quarters for chord, key, quarters in self) / beats_per_bar)
         if bars:
-            return len(self)
-        return ((len(self) * beats_per_bar) / bpm) * 60
+            return _bars
+        return ceil(((_bars * beats_per_bar) / bpm) * 60)
 
     def get_midi_chords(self, shift=0):
         """Returns a list of NoteContainer() objects that represent each chord in the progression."""
-        chords = [to_chords(chord, key)[0] for chord, key in self]
-        return [[int(note) + shift for note in NoteContainer(chord)] for chord in chords]
+        chord_list, note_list = [[to_chords(chord, key)[0]] * quarters for chord, key, quarters in self], []
+        for chords in chord_list:
+            note_list.append([[int(note) + shift for note in NoteContainer(chord)] for chord in chords])
+        return list(chain.from_iterable(note_list))
 
     def __repr__(self):
         return "SongPart(name='{}', chords={})".format(self.name, super(SongPart, self).__repr__())
