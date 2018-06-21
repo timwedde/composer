@@ -1,10 +1,12 @@
 ### System ###
+import logging
 from enum import Enum
+from time import time
 from time import sleep
 from threading import Thread, Event
 
 ### Mido ###
-from mido import open_input, open_output, get_input_names, get_output_names # pylint: disable-msg=no-name-in-module
+from mido import open_input, open_output, get_input_names, get_output_names  # pylint: disable-msg=no-name-in-module
 
 ### Local ###
 from .midi_meta import white_keys, black_keys_flattened, MidiState
@@ -34,15 +36,21 @@ class Key():
         self.num = num
         self.type = KeyType.BLACK if num in black_keys_flattened else KeyType.WHITE
         self.state = KeyState.INACTIVE
+        self.last_state_change = time()
+
+    def state_duration(self):
+        return time() - self.last_state_change
 
     def active(self):
         return self.state == KeyState.ACTIVE
 
     def activate(self):
         self.state = KeyState.ACTIVE
+        self.last_state_change = time()
 
     def deactivate(self):
         self.state = KeyState.INACTIVE
+        self.last_state_change = time()
 
     def draw(self):
         if self.type == KeyType.WHITE:
@@ -129,13 +137,14 @@ class Key():
 
 class Keyboard():
 
-    def __init__(self, channel=0, note_shift=0):
+    def __init__(self, channel=0, note_shift=0, key_timeout=2.0):
         self.keys = []
         for i in range(127):
             self.keys.append(Key(i))
         self.midi_state = MidiState()
         self.channel = channel
         self.note_shift = -note_shift
+        self.key_timeout = key_timeout
 
     def keyboard_header(self, width):
         part = width // 10
@@ -189,6 +198,11 @@ class Keyboard():
 
     def handle_message(self, msg):
         self.midi_state.handle_message(msg)
+        dead_keys = [key for key in self.keys
+                     if key.state == KeyState.ACTIVE
+                     and key.state_duration() > self.key_timeout]
+        if dead_keys:
+            logging.info("Dead Keys: {}".format(dead_keys))
 
 
 class MidiPiano(Thread):
