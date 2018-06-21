@@ -1,7 +1,7 @@
 CopyCat, Tim Wedde
-INTRO, I, V, vi, IV
-VERSE, I, V, vi, iii, IV
-CHORUS, vi, V, IV, V
+INTRO, I, V, VIm, IV
+VERSE, I, V, VIm, IIIm, IV
+CHORUS, VIm, V, IV, V
 VERSE
 CHORUS
-OUTRO, I, V, vi, V
+OUTRO, I, V, VIm, V

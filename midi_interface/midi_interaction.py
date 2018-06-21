@@ -238,6 +238,8 @@ class SongStructureMidiInteraction(MidiInteraction):
         response_sequence = NoteSequence()
         response_start_time = 0
         response_duration = 0
+
+        # Get handles for all required players
         player_melody = self._midi_hub.start_playback(response_sequence, playback_channel=1, allow_updates=True)
         player_bass = self._midi_hub.start_playback(response_sequence, playback_channel=2, allow_updates=True)
         player_chords = self._midi_hub.start_playback(response_sequence, playback_channel=3, allow_updates=True)
@@ -246,6 +248,8 @@ class SongStructureMidiInteraction(MidiInteraction):
         # Song structure data
         part_in_song = 0  # index to STRUCTURE list
         bars_played = 0  # absolute number of bars played
+        bars_played_for_part = 0  # number of bars played for the current part
+        total_bars = self.STRUCTURE.duration(bars=True)
         part_duration = self.STRUCTURE[part_in_song].duration(bars=True)
 
         # Enter loop at each clock tick.
@@ -268,109 +272,94 @@ class SongStructureMidiInteraction(MidiInteraction):
             captured_sequence.tempos[0].qpm = self._qpm
 
             tick_duration = tick_time - last_tick_time
-            last_end_time = max(note.end_time for note in captured_sequence.notes) if captured_sequence.notes else 0.0
 
-            # True if there was no input captured during the last tick.
-            silent_tick = last_end_time <= last_tick_time
-
-            if not silent_tick:
-                listen_ticks += 1
-
-            part_in_song = bars_played // part_duration
-            bar_in_part = bars_played % part_duration
+            if bars_played_for_part > part_duration:
+                part_in_song += 1
+                bars_played_for_part = 0
             if part_in_song >= len(self.STRUCTURE):
                 break
+            start_of_part = bars_played_for_part == 0
             part_duration = self.STRUCTURE[part_in_song].duration(bars=True)
+            part = self.STRUCTURE[part_in_song]
+            logging.info("Current Part: {} ({}) | Bars (Part): {}/{} | Bars (Total): {}/{}".format(part.name,
+                                                                                                   part_in_song,
+                                                                                                   bars_played_for_part,
+                                                                                                   part_duration,
+                                                                                                   bars_played,
+                                                                                                   total_bars))
 
-            response_duration = part_duration * tick_duration
             response_start_time = tick_time
             capture_start_time = self._captor.start_time
-            if silent_tick:  # Move the sequence forward one tick in time.
-                captured_sequence = adjust_sequence_times(captured_sequence, tick_duration)
-                captured_sequence.total_time = tick_time
-                capture_start_time += tick_duration
-
-            if bars_played % part_duration == 0:
-                part = self.STRUCTURE[part_in_song]
-                logging.info("Starting part '{}'".format(part.name))
-
-                if self.MELODY_CACHE[part.name]:
-                    melody_sequence = self.MELODY_CACHE[part.name].sequence
-                    response_start_time = self.MELODY_CACHE[part.name].response_start_time
-                else:
-                    logging.info("Generating new melody sequence")
-                    melody_sequence = self._generate(0, captured_sequence, capture_start_time,
-                                                     response_start_time, response_start_time + response_duration)
-                    self.MELODY_CACHE[part.name] = CacheItem(melody_sequence, capture_start_time)
-
-                if self.BASS_CACHE[part.name]:
-                    bass_sequence = self.BASS_CACHE[part.name].sequence
-                    response_start_time = self.BASS_CACHE[part.name].response_start_time
-                else:
-                    logging.info("Generating new bass sequence")
-                    bass_sequence = self._generate(1, captured_sequence, capture_start_time,
-                                                   response_start_time, response_start_time + response_duration)
-                    self.BASS_CACHE[part.name] = CacheItem(bass_sequence, capture_start_time)
-
-                if self.DRUM_CACHE[part.name]:
-                    drum_sequence = self.DRUM_CACHE[part.name].sequence
-                    response_start_time = self.DRUM_CACHE[part.name].response_start_time
-                else:
-                    logging.info("Generating new drum sequence")
-                    drum_sequence = self._generate(2, captured_sequence, capture_start_time,
-                                                   response_start_time, response_start_time + response_duration)
-                    self.DRUM_CACHE[part.name] = CacheItem(drum_sequence, capture_start_time)
-
-                size = getsizeof(self.MELODY_CACHE) + getsizeof(self.BASS_CACHE) + getsizeof(self.DRUM_CACHE)
-                logging.info("Cache Size: {}KB".format(size // 8))
-
-                chord_sequence = NoteSequence()
-                notes = []
-                chords = part.get_midi_chords()
-                for i, chord in enumerate(chords):
-                    for note in generate_midi_chord(chord, i / 2, 0.5):
-                        notes.append(note)
-                notes = [Note(note.pitch, note.velocity, note.start + response_start_time,
-                              note.start + note.end + response_start_time) for note in notes]
-                add_track_to_sequence(chord_sequence, 0, notes)
-
-                # If it took too long to generate, push response to next tick.
-                if (time() - response_start_time) >= tick_duration / 4:
-                    push_ticks = ((time() - response_start_time) // tick_duration + 1)
-                    response_start_time += push_ticks * tick_duration
-                    melody_sequence = adjust_sequence_times(melody_sequence, push_ticks * tick_duration)
-                    bass_sequence = adjust_sequence_times(bass_sequence, push_ticks * tick_duration)
-                    chord_sequence = adjust_sequence_times(chord_sequence, push_ticks * tick_duration)
-                    drum_sequence = adjust_sequence_times(drum_sequence, push_ticks * tick_duration)
-                    self.MELODY_CACHE[part.name].response_start_time = response_start_time
-                    self.BASS_CACHE[part.name].response_start_time = response_start_time
-                    self.DRUM_CACHE[part.name].response_start_time = response_start_time
-                    logging.warning("Response too late. Pushing back {} ticks.".format(push_ticks))
-
-                # Start response playback. Specify the start_time to avoid
-                # stripping initial events due to generation lag.
-                player_melody.update_sequence(melody_sequence, start_time=response_start_time)
-                player_bass.update_sequence(bass_sequence, start_time=response_start_time)
-                player_chords.update_sequence(chord_sequence, start_time=response_start_time)
-                player_drums.update_sequence(drum_sequence, start_time=response_start_time)
-
-            if not captured_sequence.notes:
-                # Reset captured sequence since we are still idling.
-                if melody_sequence.total_time <= tick_time:
-                    self._update_state(State.IDLE)
-                if self._captor.start_time < tick_time:
-                    self._captor.start_time = tick_time
-                # we hit this thing when we're playing generated stuff, but
-                # neither of the above if's are activated
-                self._end_call.clear()
-                listen_ticks = 0
-            elif (self._end_call.is_set() or silent_tick or listen_ticks >= self._max_listen_ticks):
-                pass
-            else:
-                self._update_state(State.LISTENING)  # Continue listening.
+            response_duration = part_duration * tick_duration
 
             last_tick_time = tick_time
             bars_played += 1
+            bars_played_for_part += 1
+
+            # If we are not at the beginning of a new part, there's nothing to do.
+            if not start_of_part:
+                continue
+
+            if self.MELODY_CACHE[part.name]:
+                logging.info("Pulling melody sequence from cache")
+                melody_sequence = self.MELODY_CACHE[part.name].sequence
+                response_start_time = self.MELODY_CACHE[part.name].response_start_time
+            else:
+                logging.info("Generating new melody sequence")
+                melody_sequence = self._generate(0, captured_sequence, capture_start_time,
+                                                 response_start_time, response_start_time + response_duration)
+                self.MELODY_CACHE[part.name] = CacheItem(melody_sequence, capture_start_time)
+
+            if self.BASS_CACHE[part.name]:
+                logging.info("Pulling bass sequence from cache")
+                bass_sequence = self.BASS_CACHE[part.name].sequence
+                response_start_time = self.BASS_CACHE[part.name].response_start_time
+            else:
+                logging.info("Generating new bass sequence")
+                bass_sequence = self._generate(1, captured_sequence, capture_start_time,
+                                               response_start_time, response_start_time + response_duration)
+                self.BASS_CACHE[part.name] = CacheItem(bass_sequence, capture_start_time)
+
+            if self.DRUM_CACHE[part.name]:
+                logging.info("Pulling drum sequence from cache")
+                drum_sequence = self.DRUM_CACHE[part.name].sequence
+                response_start_time = self.DRUM_CACHE[part.name].response_start_time
+            else:
+                logging.info("Generating new drum sequence")
+                drum_sequence = self._generate(2, captured_sequence, capture_start_time,
+                                               response_start_time, response_start_time + response_duration)
+                self.DRUM_CACHE[part.name] = CacheItem(drum_sequence, capture_start_time)
+
+            size = getsizeof(self.MELODY_CACHE) + getsizeof(self.BASS_CACHE) + getsizeof(self.DRUM_CACHE)
+            logging.info("Cache Size: {}KB".format(size // 8))
+
+            chord_sequence, notes = NoteSequence(), []
+            chords = part.get_midi_chords()
+            for i, chord in enumerate(chords):
+                for note in generate_midi_chord(chord, i / 2, 0.5):
+                    notes.append(note)
+            notes = [Note(note.pitch, note.velocity, note.start + response_start_time,
+                          note.start + note.end + response_start_time) for note in notes]
+            add_track_to_sequence(chord_sequence, 0, notes)
+
+            # If it took too long to generate, push the response to next tick.
+            if (time() - response_start_time) >= tick_duration / 4:
+                push_ticks = ((time() - response_start_time) // tick_duration + 1)
+                response_start_time += push_ticks * tick_duration
+                melody_sequence = adjust_sequence_times(melody_sequence, push_ticks * tick_duration)
+                bass_sequence = adjust_sequence_times(bass_sequence, push_ticks * tick_duration)
+                chord_sequence = adjust_sequence_times(chord_sequence, push_ticks * tick_duration)
+                drum_sequence = adjust_sequence_times(drum_sequence, push_ticks * tick_duration)
+                self.MELODY_CACHE[part.name].response_start_time = response_start_time
+                self.BASS_CACHE[part.name].response_start_time = response_start_time
+                self.DRUM_CACHE[part.name].response_start_time = response_start_time
+                logging.warning("Response too late. Pushing back {} ticks.".format(push_ticks))
+
+            # Start response playback. Specify start_time to avoid stripping initial events due to generation lag.
+            player_melody.update_sequence(melody_sequence, start_time=response_start_time)
+            player_bass.update_sequence(bass_sequence, start_time=response_start_time)
+            player_chords.update_sequence(chord_sequence, start_time=response_start_time)
+            player_drums.update_sequence(drum_sequence, start_time=response_start_time)
 
         player_melody.stop()
         player_bass.stop()

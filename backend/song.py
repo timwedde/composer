@@ -89,9 +89,9 @@ class Song(list):
         self.author = author
         super(Song, self).__init__(parts)
 
-    def duration(self, bars=False):
+    def duration(self, bars=False, bpm=120):
         """Returns the summed duration of all SongPart()s contained within it."""
-        return sum((part.duration(bars) for part in self))
+        return sum((part.duration(bars, bpm) for part in self))
 
     def __repr__(self):
         return "Song(name='{}', author='{}', parts={})".format(self.name, self.author, super(Song, self).__repr__())
