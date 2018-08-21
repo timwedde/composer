@@ -91,7 +91,7 @@ class ComposerManager():
         self.start_harmonizer()
         self.start_recorder()
         self.start_interaction(self.selected_song)
-        return self.selected_song.duration()
+        return self.selected_song.duration() * 1.2 # to compensate for generation lag
 
     def stop(self):
         """Stops the signal chain and thus the generation process."""

@@ -309,7 +309,7 @@ class TerminalGUI(urwid.WidgetWrap):
         self.keyboard_melody._invalidate()  # pylint: disable-msg=protected-access
         self.keyboard_bass._invalidate()  # pylint: disable-msg=protected-access
         if self.current_song_started:
-            progress = ((time() - self.current_song_started) / 48)
+            progress = ((time() - self.current_song_started) / self.current_song_duration)
             self.animate_progress.set_completion(progress)
 
     def refresh(self, loop=None, user_data=None):
