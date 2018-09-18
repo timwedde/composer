@@ -45,7 +45,7 @@ def adjust_sequence_times(sequence, delta_time):
     return retimed_sequence
 
 
-def generate_midi_chord(notes, start_time, duration=2, velocity=100):
+def generate_midi_chord(notes, start_time, duration=2, velocity=80):
     return [Note(note, velocity, start_time, duration) for note in notes]
 
 
