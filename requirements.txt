@@ -57,7 +57,7 @@ simplegeneric==0.8.1
 six==1.11.0
 sortedcontainers==1.5.10
 tensorboard==1.8.0
-tensorflow==1.8.0
+tensorflow>=1.12.1
 termcolor==1.1.0
 tornado==5.0.2
 traitlets==4.3.2
