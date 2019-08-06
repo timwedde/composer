@@ -65,3 +65,4 @@ urwid==2.0.1
 wcwidth==0.1.7
 Werkzeug==0.14.1
 wrapt==1.10.11
+pydub==0.23.1
