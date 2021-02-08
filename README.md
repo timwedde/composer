@@ -8,6 +8,10 @@
 * [Master Version](https://github.com/timwedde/composer/archive/master.zip)
 * [Latest Release](https://github.com/timwedde/composer/archive/0.4.3.zip) (0.4.3)
 
+## Disclaimer
+Please note that this project has been dormant for quite a while. There also appear t be package inconsistencies due to this fact. As such, running this project is difficult.  
+Over the past few years many new approaches have been developed that work better than this one, so it would be easiest to switcch to one of those. For example the Tensorflow Magenta team has made large strides using Transformer-based architectures and OpenAI also has a Jukebox project which looks promising.
+
 ## Installation
 composer can be installed by cloning the repository:
 ```
